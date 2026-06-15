@@ -1,9 +1,6 @@
-# CataLog — Landing Page
-**Proyecto:** ACT-3 · Desarrollo Web Integral  
-**Equipo:** 2  
-**Stack:** React 18 + Vite + Tailwind CSS + React Hook Form  
-**Flujo de trabajo:** GitHub Flow
+## Catálogo Digital
 
+Proyecto desarrollado para la materia DWI.
 ---
 
 ## 🚀 Setup inicial (solo una vez)
