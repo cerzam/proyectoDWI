@@ -142,3 +142,11 @@ src/
 - [ ] CTA con validación de correo funcionando
 - [ ] Mínimo 3 interacciones reales documentadas
 - [ ] PDF ACT-3-Equipo2.pdf con link, capturas y propuesta de valor
+
+## 🧪 Pruebas de QA
+
+Este proyecto utiliza **Vitest** y **Testing Library** para las pruebas de los componentes.
+
+Para correr la suite de pruebas localmente, ejecuta:
+`npm install` (para asegurar que tienes las dependencias)
+`npm run test`
