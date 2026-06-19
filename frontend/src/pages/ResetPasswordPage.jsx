@@ -1,17 +1,21 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient.js';
 import PasswordInput from '../components/PasswordInput.jsx';
 import { getPasswordChecks, passwordValidationRules } from '../lib/passwordRules.js';
 
-export default function RegisterPage() {
+export default function ResetPasswordPage() {
+  const navigate = useNavigate();
   const {
     register,
     handleSubmit,
     watch,
     formState: { errors },
   } = useForm();
+
+  const [canReset, setCanReset] = useState(false);
+  const [checking, setChecking] = useState(true);
   const [serverError, setServerError] = useState('');
   const [success, setSuccess] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -19,37 +23,54 @@ export default function RegisterPage() {
   const password = watch('password', '');
   const checks = getPasswordChecks(password);
 
-  const onSubmit = async ({ full_name, email, password }) => {
+  useEffect(() => {
+    // Supabase procesa el enlace de recuperación y emite PASSWORD_RECOVERY.
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY' || session) {
+        setCanReset(true);
+        setChecking(false);
+      }
+    });
+
+    // También cubre el caso en que la sesión de recuperación ya esté establecida.
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session) setCanReset(true);
+      setChecking(false);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const onSubmit = async ({ password }) => {
     setSubmitting(true);
     setServerError('');
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: { full_name } },
-    });
+    const { error } = await supabase.auth.updateUser({ password });
     setSubmitting(false);
     if (error) {
-      setServerError(error.message || 'No se pudo crear la cuenta');
+      setServerError(error.message || 'No se pudo actualizar la contraseña');
       return;
     }
     setSuccess(true);
+    // Cierra la sesión de recuperación para forzar un login limpio.
+    await supabase.auth.signOut();
   };
 
   if (success) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-brand-50 px-4">
         <div className="w-full max-w-md rounded-2xl bg-white p-8 text-center shadow-lg">
-          <h1 className="font-serif text-2xl font-bold text-brand-900">¡Cuenta creada!</h1>
+          <h1 className="font-serif text-2xl font-bold text-brand-900">Contraseña actualizada</h1>
           <p className="mt-3 text-gray-600">
-            Te enviamos un correo de verificación. Revisa tu bandeja de entrada para confirmar tu
-            email antes de iniciar sesión.
+            Tu contraseña se cambió correctamente. Ya puedes iniciar sesión con ella.
           </p>
-          <Link
-            to="/login"
+          <button
+            onClick={() => navigate('/login')}
             className="mt-6 inline-block rounded-lg bg-brand-600 px-5 py-2.5 font-medium text-white hover:bg-brand-900"
           >
             Ir a iniciar sesión
-          </Link>
+          </button>
         </div>
       </div>
     );
@@ -58,33 +79,19 @@ export default function RegisterPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-brand-50 px-4">
       <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-lg">
-        <h1 className="font-serif text-3xl font-bold text-brand-900">Crear cuenta</h1>
-        <p className="mt-1 text-gray-500">Empieza a publicar tu catálogo</p>
+        <h1 className="font-serif text-3xl font-bold text-brand-900">Nueva contraseña</h1>
+        <p className="mt-1 text-gray-500">Define una contraseña nueva para tu cuenta.</p>
+
+        {!checking && !canReset && (
+          <div className="mt-4 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-700">
+            Abre esta página desde el enlace que te enviamos por correo. Si el enlace expiró,
+            solicita uno nuevo.
+          </div>
+        )}
 
         <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4">
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Nombre completo</label>
-            <input
-              {...register('full_name', { required: 'El nombre es requerido' })}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
-            />
-            {errors.full_name && (
-              <p className="mt-1 text-sm text-red-600">{errors.full_name.message}</p>
-            )}
-          </div>
-
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Email</label>
-            <input
-              type="email"
-              {...register('email', { required: 'El email es requerido' })}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
-            />
-            {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>}
-          </div>
-
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Contraseña</label>
+            <label className="mb-1 block text-sm font-medium text-gray-700">Nueva contraseña</label>
             <PasswordInput {...register('password', passwordValidationRules)} />
             {errors.password && (
               <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
@@ -124,17 +131,16 @@ export default function RegisterPage() {
 
           <button
             type="submit"
-            disabled={submitting}
+            disabled={submitting || checking}
             className="w-full rounded-lg bg-brand-600 py-2.5 font-medium text-white hover:bg-brand-900 disabled:opacity-60"
           >
-            {submitting ? 'Creando…' : 'Crear cuenta'}
+            {submitting ? 'Guardando…' : 'Guardar nueva contraseña'}
           </button>
         </form>
 
         <p className="mt-6 text-center text-sm text-gray-500">
-          ¿Ya tienes cuenta?{' '}
           <Link to="/login" className="font-medium text-brand-600 hover:underline">
-            Inicia sesión
+            Volver a iniciar sesión
           </Link>
         </p>
       </div>
