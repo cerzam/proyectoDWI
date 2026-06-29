@@ -11,7 +11,7 @@ export default function RegisterPage() {
     handleSubmit,
     watch,
     formState: { errors },
-  } = useForm();
+  } = useForm({ mode: 'onBlur', reValidateMode: 'onBlur' });
   const [serverError, setServerError] = useState('');
   const [success, setSuccess] = useState(false);
   const [submitting, setSubmitting] = useState(false);

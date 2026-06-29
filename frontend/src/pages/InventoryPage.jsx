@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router-dom';
 import { productService } from '../services/productService.js';
+import Toast from '../components/Toast.jsx';
 
 const REASONS = [
   { value: 'compra', label: 'Compra' },
@@ -30,6 +31,7 @@ export default function InventoryPage() {
   const [error, setError] = useState('');
   const [formError, setFormError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [toast, setToast] = useState(null);
 
   const {
     register,
@@ -71,8 +73,10 @@ export default function InventoryPage() {
       reset({ quantity: '', reason: values.reason, notes: '' });
       const history = await productService.getInventory(productId);
       setMovements(history || []);
+      setToast({ type: 'success', message: 'Movimiento registrado correctamente' });
     } catch (err) {
       setFormError(err.message);
+      setToast({ type: 'error', message: err.message });
     } finally {
       setSubmitting(false);
     }
@@ -99,6 +103,7 @@ export default function InventoryPage() {
 
   return (
     <div className="min-h-screen bg-brand-50/40 px-4 py-8">
+      <Toast message={toast?.message} type={toast?.type} onClose={() => setToast(null)} />
       <div className="mx-auto max-w-3xl">
         <button onClick={() => navigate('/dashboard')} className="mb-4 text-sm text-brand-600 hover:underline">
           ← Volver al dashboard
@@ -108,6 +113,9 @@ export default function InventoryPage() {
           <h1 className="font-serif text-2xl font-bold text-brand-900">{product?.name}</h1>
           <p className="mt-1 text-sm text-gray-500">Stock actual</p>
           <p className="text-5xl font-extrabold text-brand-600">{product?.stock ?? 0}</p>
+          <p className="mt-4 text-sm text-gray-500">
+            Registra la llegada de nueva mercancía o ventas realizadas manualmente
+          </p>
 
           <form onSubmit={handleSubmit(onSubmit)} className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div>
@@ -115,7 +123,7 @@ export default function InventoryPage() {
               <input
                 type="number"
                 step="1"
-                placeholder="+ entrada / - salida"
+                placeholder="Número positivo para entrada, negativo para salida"
                 {...register('quantity', {
                   required: 'Requerido',
                   validate: (v) =>

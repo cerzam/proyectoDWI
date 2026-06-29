@@ -6,6 +6,7 @@ import { catalogService } from '../services/catalogService.js';
 import { productService } from '../services/productService.js';
 import { categoryService } from '../services/categoryService.js';
 import ProductCard from '../components/ProductCard.jsx';
+import Toast from '../components/Toast.jsx';
 
 export default function DashboardPage() {
   const navigate = useNavigate();
@@ -17,6 +18,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
+  const [toast, setToast] = useState(null);
 
   const loadProducts = useCallback(async (catalogId) => {
     try {
@@ -115,8 +117,10 @@ export default function DashboardPage() {
     try {
       await productService.deleteProduct(product.id);
       await loadProducts(catalog.id);
+      setToast({ type: 'success', message: 'Producto eliminado correctamente' });
     } catch (err) {
       setError(err.message);
+      setToast({ type: 'error', message: err.message });
     }
   };
 
@@ -134,6 +138,7 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-brand-50/40">
+      <Toast message={toast?.message} type={toast?.type} onClose={() => setToast(null)} />
       <header className="border-b border-gray-200 bg-white">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-4">
           <div>
@@ -243,19 +248,25 @@ function CreateCatalogForm({ onCreated, onLogout, error }) {
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm();
   const [submitting, setSubmitting] = useState(false);
   const [serverError, setServerError] = useState('');
+  const [toast, setToast] = useState(null);
 
   const onSubmit = async (values) => {
     setSubmitting(true);
     setServerError('');
     try {
       await catalogService.createCatalog(values);
-      await onCreated();
+      setToast({ type: 'success', message: 'Catálogo creado correctamente' });
+      window.setTimeout(() => {
+        onCreated();
+      }, 700);
     } catch (err) {
       setServerError(err.message);
+      setToast({ type: 'error', message: err.message });
     } finally {
       setSubmitting(false);
     }
@@ -263,6 +274,7 @@ function CreateCatalogForm({ onCreated, onLogout, error }) {
 
   return (
     <div className="min-h-screen bg-brand-50 px-4 py-12">
+      <Toast message={toast?.message} type={toast?.type} onClose={() => setToast(null)} />
       <div className="mx-auto max-w-lg rounded-2xl bg-white p-8 shadow-lg">
         <div className="mb-6 flex items-center justify-between">
           <h1 className="font-serif text-2xl font-bold text-brand-900">Crea tu catálogo</h1>
@@ -288,13 +300,17 @@ function CreateCatalogForm({ onCreated, onLogout, error }) {
 
           <div>
             <label className="mb-1 block text-sm font-medium text-gray-700">
-              Slug (URL pública)
+              Enlace personalizado de tu tienda
             </label>
             <div className="flex items-center gap-1">
               <span className="text-sm text-gray-400">/c/</span>
               <input
                 {...register('slug', {
                   required: 'El slug es requerido',
+                  onChange: (e) => {
+                    const normalized = e.target.value.toLowerCase().replace(/\s+/g, '-');
+                    setValue('slug', normalized, { shouldValidate: true });
+                  },
                   pattern: {
                     value: /^[a-z0-9-]+$/,
                     message: 'Solo minúsculas, números y guiones',
@@ -304,6 +320,9 @@ function CreateCatalogForm({ onCreated, onLogout, error }) {
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
               />
             </div>
+            <p className="mt-1 text-xs text-gray-500">
+              Solo minúsculas, números y guiones. Ej: mi-tienda-2024
+            </p>
             {errors.slug && <p className="mt-1 text-sm text-red-600">{errors.slug.message}</p>}
           </div>
 
@@ -314,6 +333,9 @@ function CreateCatalogForm({ onCreated, onLogout, error }) {
               placeholder="5215555555555"
               className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
             />
+            <p className="mt-1 text-xs text-gray-500">
+              Incluye código de país. Ej: 5215536584928
+            </p>
             {errors.whatsapp && (
               <p className="mt-1 text-sm text-red-600">{errors.whatsapp.message}</p>
             )}
