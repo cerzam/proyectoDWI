@@ -38,7 +38,11 @@ export default function ProductFormPage() {
         }
         if (!active) return;
         setCatalogId(catalog.id);
-        setCategories(catalog.categories || []);
+
+        // Cargar categorías del catálogo: GET /api/categories?catalog_id=uuid
+        const cats = await categoryService.getCategories(catalog.id);
+        if (!active) return;
+        setCategories(cats || []);
 
         if (isEdit) {
           const { product } = await productService.getProduct(id);

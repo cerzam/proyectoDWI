@@ -4,12 +4,16 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient.js';
 import { catalogService } from '../services/catalogService.js';
 import { productService } from '../services/productService.js';
+import { categoryService } from '../services/categoryService.js';
 import ProductCard from '../components/ProductCard.jsx';
 
 export default function DashboardPage() {
   const navigate = useNavigate();
   const [catalog, setCatalog] = useState(null);
   const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [newCategory, setNewCategory] = useState('');
+  const [savingCategory, setSavingCategory] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
@@ -23,19 +27,31 @@ export default function DashboardPage() {
     }
   }, []);
 
+  const loadCategories = useCallback(async (catalogId) => {
+    try {
+      const data = await categoryService.getCategories(catalogId);
+      setCategories(data || []);
+    } catch (err) {
+      setError(err.message);
+    }
+  }, []);
+
   const loadCatalog = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
       const data = await catalogService.getCatalog();
       setCatalog(data);
-      if (data?.id) await loadProducts(data.id);
+      if (data?.id) {
+        await loadProducts(data.id);
+        await loadCategories(data.id);
+      }
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
-  }, [loadProducts]);
+  }, [loadProducts, loadCategories]);
 
   useEffect(() => {
     loadCatalog();
@@ -54,6 +70,34 @@ export default function DashboardPage() {
       setTimeout(() => setCopied(false), 2000);
     } catch {
       setError('No se pudo copiar el enlace');
+    }
+  };
+
+  const handleAddCategory = async (e) => {
+    e.preventDefault();
+    const name = newCategory.trim();
+    if (!name) return;
+    setSavingCategory(true);
+    setError('');
+    try {
+      await categoryService.createCategory({ catalog_id: catalog.id, name, position: 0 });
+      setNewCategory('');
+      await loadCategories(catalog.id);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setSavingCategory(false);
+    }
+  };
+
+  const handleDeleteCategory = async (category) => {
+    if (!window.confirm(`¿Eliminar categoría ${category.name}?`)) return;
+    setError('');
+    try {
+      await categoryService.deleteCategory(category.id);
+      await loadCategories(catalog.id);
+    } catch (err) {
+      setError(err.message);
     }
   };
 
@@ -123,6 +167,48 @@ export default function DashboardPage() {
         {error && (
           <div className="mb-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
         )}
+
+        <section className="mb-8 rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-100">
+          <h2 className="font-serif text-lg font-semibold text-brand-900">Categorías</h2>
+
+          <div className="mt-4 flex flex-wrap gap-2">
+            {categories.length === 0 ? (
+              <p className="text-sm text-gray-500">Sin categorías aún</p>
+            ) : (
+              categories.map((c) => (
+                <span
+                  key={c.id}
+                  className="inline-flex items-center gap-2 rounded-full bg-brand-50 px-3 py-1.5 text-sm font-medium text-brand-900"
+                >
+                  {c.name}
+                  <button
+                    onClick={() => handleDeleteCategory(c)}
+                    aria-label={`Eliminar categoría ${c.name}`}
+                    className="text-brand-600 hover:text-red-600"
+                  >
+                    Eliminar
+                  </button>
+                </span>
+              ))
+            )}
+          </div>
+
+          <form onSubmit={handleAddCategory} className="mt-4 flex flex-wrap gap-2">
+            <input
+              value={newCategory}
+              onChange={(e) => setNewCategory(e.target.value)}
+              placeholder="Nueva categoría"
+              className="flex-1 rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
+            />
+            <button
+              type="submit"
+              disabled={savingCategory || !newCategory.trim()}
+              className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-900 disabled:opacity-60"
+            >
+              {savingCategory ? 'Agregando…' : 'Agregar'}
+            </button>
+          </form>
+        </section>
 
         {products.length === 0 ? (
           <div className="rounded-xl border border-dashed border-gray-300 bg-white p-12 text-center">
