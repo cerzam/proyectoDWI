@@ -97,7 +97,7 @@ export default function ProductCard({
               onClick={onInventory}
               className="rounded-md border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50"
             >
-              Inventario
+              Entradas/Salidas
             </button>
             <button
               onClick={onToggleVisible}

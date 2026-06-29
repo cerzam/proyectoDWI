@@ -5,6 +5,7 @@ import { catalogService } from '../services/catalogService.js';
 import { categoryService } from '../services/categoryService.js';
 import { productService } from '../services/productService.js';
 import ImageUploader from '../components/ImageUploader.jsx';
+import Toast from '../components/Toast.jsx';
 
 export default function ProductFormPage() {
   const { id } = useParams();
@@ -24,6 +25,7 @@ export default function ProductFormPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [toast, setToast] = useState(null);
 
   useEffect(() => {
     let active = true;
@@ -89,9 +91,11 @@ export default function ProductFormPage() {
           image_url: imageUrl || null,
         });
       }
-      navigate('/dashboard');
+      setToast({ type: 'success', message: 'Producto guardado correctamente' });
+      window.setTimeout(() => navigate('/dashboard'), 700);
     } catch (err) {
       setError(err.message);
+      setToast({ type: 'error', message: err.message });
       setSubmitting(false);
     }
   };
@@ -106,6 +110,7 @@ export default function ProductFormPage() {
 
   return (
     <div className="min-h-screen bg-brand-50/40 px-4 py-8">
+      <Toast message={toast?.message} type={toast?.type} onClose={() => setToast(null)} />
       <div className="mx-auto max-w-2xl">
         <button onClick={() => navigate('/dashboard')} className="mb-4 text-sm text-brand-600 hover:underline">
           ← Volver al dashboard
@@ -142,6 +147,7 @@ export default function ProductFormPage() {
                   type="number"
                   step="0.01"
                   min="0"
+                  placeholder="$0.00"
                   {...register('price', {
                     required: 'El precio es requerido',
                     min: { value: 0, message: 'Debe ser >= 0' },
@@ -154,7 +160,7 @@ export default function ProductFormPage() {
               {!isEdit && (
                 <div>
                   <label className="mb-1 block text-sm font-medium text-gray-700">
-                    Stock inicial
+                    Piezas disponibles para vender
                   </label>
                   <input
                     type="number"
@@ -166,6 +172,9 @@ export default function ProductFormPage() {
                     })}
                     className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
                   />
+                  <p className="mt-1 text-xs text-gray-500">
+                    Indica cuántas piezas tienes disponibles para vender
+                  </p>
                   {errors.stock_inicial && (
                     <p className="mt-1 text-sm text-red-600">{errors.stock_inicial.message}</p>
                   )}

@@ -12,7 +12,7 @@ export default function LoginPage() {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm();
+  } = useForm({ mode: 'onBlur', reValidateMode: 'onBlur' });
   const [serverError, setServerError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
