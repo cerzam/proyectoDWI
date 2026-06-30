@@ -75,6 +75,12 @@ export default function DashboardPage() {
     }
   };
 
+  const handleShareWhatsApp = () => {
+    const url = `${window.location.origin}/c/${catalog.slug}`;
+    const message = `Mira mi catálogo "${catalog.name}": ${url}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+  };
+
   const handleAddCategory = async (e) => {
     e.preventDefault();
     const name = newCategory.trim();
@@ -151,6 +157,12 @@ export default function DashboardPage() {
               className="rounded-lg border border-brand-400 px-4 py-2 text-sm font-medium text-brand-600 hover:bg-brand-50"
             >
               {copied ? '¡Enlace copiado!' : 'Copiar enlace público'}
+            </button>
+            <button
+              onClick={handleShareWhatsApp}
+              className="rounded-lg border border-green-500 px-4 py-2 text-sm font-medium text-green-600 hover:bg-green-50"
+            >
+              Compartir por WhatsApp
             </button>
             <button
               onClick={() => navigate('/dashboard/products/new')}
