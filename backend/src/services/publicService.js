@@ -6,12 +6,14 @@ function httpError(status, message) {
   return err;
 }
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export const publicService = {
   /**
    * Catálogo público por slug. Solo expone datos no sensibles:
    * NO incluye user_id, email ni nada privado del dueño.
    */
-  async getCatalogBySlug(slug) {
+  async getCatalogBySlug(slug, category = null) {
     const { data: catalog, error } = await supabase
       .from('catalogs')
       .select('id, name, slug, description, whatsapp, is_active')
@@ -21,12 +23,19 @@ export const publicService = {
     if (error) throw httpError(500, error.message);
     if (!catalog) throw httpError(404, 'Catálogo no encontrado');
 
-    const { data: products, error: prodError } = await supabase
+    let productsQuery = supabase
       .from('products')
       .select('id, name, description, price, stock, image_url, category_id, position')
       .eq('catalog_id', catalog.id)
-      .eq('is_visible', true)
-      .order('position', { ascending: true });
+      .eq('is_visible', true);
+
+    if (category && UUID_RE.test(category)) {
+      productsQuery = productsQuery.eq('category_id', category);
+    }
+
+    const { data: products, error: prodError } = await productsQuery.order('position', {
+      ascending: true,
+    });
     if (prodError) throw httpError(500, prodError.message);
 
     const { data: categories, error: catError } = await supabase
