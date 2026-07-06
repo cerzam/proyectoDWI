@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient.js';
+import { apiClient } from '../lib/apiClient.js';
 import PasswordInput from '../components/PasswordInput.jsx';
 import { getPasswordChecks, passwordValidationRules } from '../lib/passwordRules.js';
 
@@ -22,17 +23,25 @@ export default function RegisterPage() {
   const onSubmit = async ({ full_name, email, password }) => {
     setSubmitting(true);
     setServerError('');
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: { full_name } },
-    });
-    setSubmitting(false);
-    if (error) {
+    try {
+      const result = await apiClient('/api/auth/register', {
+        method: 'POST',
+        body: JSON.stringify({ email, password, full_name }),
+      });
+
+      if (result?.session?.access_token && result?.session?.refresh_token) {
+        await supabase.auth.setSession({
+          access_token: result.session.access_token,
+          refresh_token: result.session.refresh_token,
+        });
+      }
+
+      setSuccess(true);
+    } catch (error) {
       setServerError(error.message || 'No se pudo crear la cuenta');
-      return;
+    } finally {
+      setSubmitting(false);
     }
-    setSuccess(true);
   };
 
   if (success) {
@@ -41,9 +50,9 @@ export default function RegisterPage() {
         <div className="w-full max-w-md rounded-2xl bg-white p-8 text-center shadow-lg">
           <h1 className="font-serif text-2xl font-bold text-brand-900">¡Cuenta creada!</h1>
           <p className="mt-3 text-gray-600">
-            Te enviamos un correo de verificación. Revisa tu bandeja de entrada para confirmar tu
-            email antes de iniciar sesión.
-          </p>
+  Tu cuenta fue creada correctamente. Te enviamos un correo de bienvenida. Ya puedes
+  iniciar sesión.
+</p>
           <Link
             to="/login"
             className="mt-6 inline-block rounded-lg bg-brand-600 px-5 py-2.5 font-medium text-white hover:bg-brand-900"

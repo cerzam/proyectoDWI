@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase.js';
+import { sendWelcomeEmail } from './emailService.js';
 
 /** Error helper con status HTTP. */
 function httpError(status, message) {
@@ -26,6 +27,14 @@ export const authService = {
       // El usuario se creó pero quizá requiere verificación de email
       return { user: data.user, session: null };
     }
+
+    try {
+      await sendWelcomeEmail({ email, name: full_name });
+    } catch (emailError) {
+      // El email de bienvenida no debe bloquear el registro del usuario.
+      console.warn('No se pudo enviar el email de bienvenida:', emailError.message);
+    }
+
     return { user: session.user, session: session.session };
   },
 
