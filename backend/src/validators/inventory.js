@@ -14,7 +14,7 @@ export function validateCreateMovement(body = {}) {
   if (quantity === undefined || quantity === null || quantity === '' || !Number.isInteger(qty)) {
     errors.push('quantity es requerido y debe ser un entero (positivo=entrada, negativo=salida)');
   } else if (qty === 0) {
-    errors.push('quantity no puede ser 0');
+    errors.push('La cantidad no puede ser cero. Usa positivo para entrada, negativo para salida.');
   }
 
   if (!reason || typeof reason !== 'string' || !reason.trim()) {

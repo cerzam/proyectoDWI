@@ -37,6 +37,8 @@ export const publicService = {
       ascending: true,
     });
     if (prodError) throw httpError(500, prodError.message);
+    const visibleProducts = products || [];
+    const totalProducts = visibleProducts.length;
 
     const { data: categories, error: catError } = await supabase
       .from('categories')
@@ -53,7 +55,9 @@ export const publicService = {
         whatsapp: catalog.whatsapp,
       },
       categories: categories || [],
-      products: products || [],
+      products: visibleProducts,
+      totalProducts,
+      hasProducts: totalProducts > 0,
     };
   },
 };
