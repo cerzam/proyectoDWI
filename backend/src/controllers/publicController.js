@@ -9,7 +9,13 @@ export const publicController = {
       }
 
       const data = await publicService.getCatalogBySlug(req.params.slug, category?.trim() || null);
-      return res.status(200).json(data);
+      return res.status(200).json({
+        catalog: data.catalog,
+        products: data.products,
+        categories: data.categories,
+        totalProducts: data.totalProducts,
+        hasProducts: data.hasProducts,
+      });
     } catch (err) {
       return next(err);
     }
