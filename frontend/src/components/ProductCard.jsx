@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { PLACEHOLDER_IMAGE } from '../utils/productImage';
 
 function formatPrice(value) {
@@ -12,12 +13,14 @@ function formatPrice(value) {
  *  - product
  *  - publicView: si true, muestra botón de WhatsApp en vez de acciones de gestión.
  *  - whatsapp: número del catálogo (solo vista pública).
+ *  - slug: slug del catálogo, usado para enlazar al detalle del producto (solo vista pública).
  *  - onEdit, onInventory, onToggleVisible, onDelete: acciones (modo dashboard).
  */
 export default function ProductCard({
   product,
   publicView = false,
   whatsapp,
+  slug,
   onEdit,
   onInventory,
   onToggleVisible,
@@ -30,9 +33,12 @@ export default function ProductCard({
     return `https://wa.me/${whatsapp}?text=${text}`;
   };
 
+  const ImageWrapper = publicView ? Link : 'div';
+  const imageWrapperProps = publicView ? { to: `/c/${slug}/producto/${product.id}` } : {};
+
   return (
     <div className="flex flex-col overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-gray-100">
-      <div className="relative aspect-[4/3] bg-gray-50">
+      <ImageWrapper {...imageWrapperProps} className="relative aspect-[4/3] block bg-gray-50">
         <img
           src={product.image_url || PLACEHOLDER_IMAGE}
           alt={product.name}
@@ -58,10 +64,16 @@ export default function ProductCard({
             {product.is_visible ? 'Visible' : 'Oculto'}
           </span>
         )}
-      </div>
+      </ImageWrapper>
 
       <div className="flex flex-1 flex-col p-4">
-        <h3 className="font-serif text-lg font-semibold text-gray-900">{product.name}</h3>
+        {publicView ? (
+          <Link to={`/c/${slug}/producto/${product.id}`} className="hover:underline">
+            <h3 className="font-serif text-lg font-semibold text-gray-900">{product.name}</h3>
+          </Link>
+        ) : (
+          <h3 className="font-serif text-lg font-semibold text-gray-900">{product.name}</h3>
+        )}
         {product.description && (
           <p className="mt-1 line-clamp-2 text-sm text-gray-500">{product.description}</p>
         )}
