@@ -9,6 +9,7 @@ import DashboardPage from './pages/DashboardPage.jsx';
 import ProductFormPage from './pages/ProductFormPage.jsx';
 import InventoryPage from './pages/InventoryPage.jsx';
 import PublicCatalogPage from './pages/PublicCatalogPage.jsx';
+import PublicProductDetailPage from './pages/PublicProductDetailPage.jsx';
 
 export default function App() {
   return (
@@ -28,6 +29,7 @@ export default function App() {
       </Route>
 
       <Route path="/c/:slug" element={<PublicCatalogPage />} />
+      <Route path="/c/:slug/producto/:id" element={<PublicProductDetailPage />} />
     </Routes>
   );
 }
