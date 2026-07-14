@@ -1,5 +1,4 @@
-const PLACEHOLDER =
-  'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><rect width="100%25" height="100%25" fill="%23E1F5EE"/><text x="50%25" y="50%25" font-family="sans-serif" font-size="20" fill="%230F6E56" text-anchor="middle" dominant-baseline="middle">Sin imagen</text></svg>';
+import { PLACEHOLDER_IMAGE } from '../utils/productImage';
 
 function formatPrice(value) {
   return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(
@@ -35,11 +34,11 @@ export default function ProductCard({
     <div className="flex flex-col overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-gray-100">
       <div className="relative aspect-[4/3] bg-gray-50">
         <img
-          src={product.image_url || PLACEHOLDER}
+          src={product.image_url || PLACEHOLDER_IMAGE}
           alt={product.name}
           className="h-full w-full object-cover"
           onError={(e) => {
-            e.currentTarget.src = PLACEHOLDER;
+            e.currentTarget.src = PLACEHOLDER_IMAGE;
           }}
         />
         {publicView ? (
