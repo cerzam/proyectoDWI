@@ -3,7 +3,7 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 /** Valida el body para crear un producto. Devuelve { valid, errors, data }. */
 export function validateCreateProduct(body = {}) {
   const errors = [];
-  const { catalog_id, name, price, stock_inicial, description, category_id, image_url } = body;
+  const { catalog_id, name, price, stock_inicial, description, category_id, images } = body;
 
   if (!catalog_id || !UUID_RE.test(catalog_id)) {
     errors.push('catalog_id es requerido y debe ser un UUID válido');
@@ -38,7 +38,7 @@ export function validateCreateProduct(body = {}) {
       stock_inicial: stock,
       description: description ?? null,
       category_id: category_id || null,
-      image_url: image_url || null,
+      images: Array.isArray(images) ? images : null,
     },
   };
 }
@@ -71,7 +71,9 @@ export function validateUpdateProduct(body = {}) {
       data.category_id = body.category_id || null;
     }
   }
-  if (body.image_url !== undefined) data.image_url = body.image_url || null;
+  if (body.images !== undefined) {
+    data.images = Array.isArray(body.images) ? body.images : null;
+  }
   if (body.is_visible !== undefined) data.is_visible = Boolean(body.is_visible);
   if (body.position !== undefined) {
     const pos = Number(body.position);
