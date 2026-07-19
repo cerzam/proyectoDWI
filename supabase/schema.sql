@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS public.users (
     id          UUID PRIMARY KEY REFERENCES auth.users (id) ON DELETE CASCADE,
     email       TEXT,
     full_name   TEXT,
+    plan        TEXT NOT NULL DEFAULT 'free' CHECK (plan IN ('free', 'pro')),
     created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -41,6 +42,10 @@ CREATE TRIGGER on_auth_user_created
     AFTER INSERT ON auth.users
     FOR EACH ROW
     EXECUTE FUNCTION public.handle_new_user();
+
+-- El plan sólo se administra mediante procesos con privilegios administrativos.
+-- RLS de public.users se conserva sin cambios para no alterar handle_new_user().
+REVOKE INSERT, UPDATE, DELETE ON TABLE public.users FROM anon, authenticated;
 
 -- =============================================================================
 -- 2. public.catalogs
