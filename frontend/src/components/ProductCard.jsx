@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { PLACEHOLDER_IMAGE } from '../utils/productImage';
+import { getPrimaryProductImage, PLACEHOLDER_IMAGE } from '../utils/productImage';
 
 function formatPrice(value) {
   return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(
@@ -27,6 +27,7 @@ export default function ProductCard({
   onDelete,
 }) {
   const soldOut = (product.stock ?? 0) <= 0;
+  const primaryImageUrl = getPrimaryProductImage(product);
 
   const whatsappLink = () => {
     const text = encodeURIComponent(`Hola, me interesa ${product.name}`);
@@ -40,7 +41,7 @@ export default function ProductCard({
     <div className="flex flex-col overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-gray-100">
       <ImageWrapper {...imageWrapperProps} className="relative aspect-[4/3] block bg-gray-50">
         <img
-          src={product.image_url || PLACEHOLDER_IMAGE}
+          src={primaryImageUrl || PLACEHOLDER_IMAGE}
           alt={product.name}
           className="h-full w-full object-cover"
           onError={(e) => {
