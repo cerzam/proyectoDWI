@@ -3,7 +3,7 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 /** Valida el body para crear un producto. Devuelve { valid, errors, data }. */
 export function validateCreateProduct(body = {}) {
   const errors = [];
-  const { catalog_id, name, price, stock_inicial, description, category_id, image_url } = body;
+  const { catalog_id, name, price, stock_inicial, description, category_id, images } = body;
 
   if (!catalog_id || !UUID_RE.test(catalog_id)) {
     errors.push('catalog_id es requerido y debe ser un UUID válido');
@@ -28,6 +28,16 @@ export function validateCreateProduct(body = {}) {
     errors.push('category_id debe ser un UUID válido');
   }
 
+  if (images !== undefined && images !== null) {
+    if (!Array.isArray(images)) {
+      errors.push('images debe ser un arreglo de URLs');
+    } else if (images.length > 5) {
+      errors.push('No se pueden asociar más de 5 imágenes por producto');
+    } else if (images.some((img) => typeof img !== 'string' || !img.trim())) {
+      errors.push('Cada imagen debe ser una URL válida');
+    }
+  }
+
   return {
     valid: errors.length === 0,
     errors,
@@ -38,7 +48,7 @@ export function validateCreateProduct(body = {}) {
       stock_inicial: stock,
       description: description ?? null,
       category_id: category_id || null,
-      image_url: image_url || null,
+      images: Array.isArray(images) ? images : [],
     },
   };
 }
@@ -71,7 +81,17 @@ export function validateUpdateProduct(body = {}) {
       data.category_id = body.category_id || null;
     }
   }
-  if (body.image_url !== undefined) data.image_url = body.image_url || null;
+  if (body.images !== undefined) {
+    if (!Array.isArray(body.images)) {
+      errors.push('images debe ser un arreglo de URLs');
+    } else if (body.images.length > 5) {
+      errors.push('No se pueden asociar más de 5 imágenes por producto');
+    } else if (body.images.some((img) => typeof img !== 'string' || !img.trim())) {
+      errors.push('Cada imagen debe ser una URL válida');
+    } else {
+      data.images = body.images;
+    }
+  }
   if (body.is_visible !== undefined) data.is_visible = Boolean(body.is_visible);
   if (body.position !== undefined) {
     const pos = Number(body.position);

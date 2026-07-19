@@ -44,7 +44,7 @@ export const productService = {
    *  5. Devolver el producto con stock actualizado.
    */
   async create(userId, payload) {
-    const { catalog_id, name, price, stock_inicial, description, category_id, image_url } = payload;
+    const { catalog_id, name, price, stock_inicial, description, category_id, images } = payload;
     await catalogService.assertOwnership(userId, catalog_id);
 
     const quota = await catalogService.getAccountQuota(userId);
@@ -71,7 +71,7 @@ export const productService = {
         price,
         description,
         category_id,
-        image_url,
+        images, 
         stock: 0,
       })
       .select('*')

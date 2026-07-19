@@ -25,7 +25,7 @@ export const publicService = {
 
     let productsQuery = supabase
       .from('products')
-      .select('id, name, description, price, stock, image_url, category_id, position')
+      .select('id, name, description, price, stock, image_url, images, category_id, position')
       .eq('catalog_id', catalog.id)
       .eq('is_visible', true);
 
