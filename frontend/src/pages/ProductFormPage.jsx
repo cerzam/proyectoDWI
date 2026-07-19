@@ -4,7 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { catalogService } from '../services/catalogService.js';
 import { categoryService } from '../services/categoryService.js';
 import { productService } from '../services/productService.js';
-import ImageUploader from '../components/ImageUploader.jsx';
+import MultiImageUploader from '../components/MultiImageUploader.jsx';
 import Toast from '../components/Toast.jsx';
 
 export default function ProductFormPage() {
@@ -21,7 +21,7 @@ export default function ProductFormPage() {
 
   const [catalogId, setCatalogId] = useState(null);
   const [categories, setCategories] = useState([]);
-  const [imageUrl, setImageUrl] = useState('');
+  const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -49,7 +49,13 @@ export default function ProductFormPage() {
         if (isEdit) {
           const { product } = await productService.getProduct(id);
           if (!active) return;
-          setImageUrl(product.image_url || '');
+          setImages(
+            Array.isArray(product.images) && product.images.length > 0
+              ? product.images
+              : product.image_url
+                ? [product.image_url]
+                : []
+          );
           reset({
             name: product.name,
             description: product.description || '',
@@ -78,7 +84,7 @@ export default function ProductFormPage() {
           description: values.description || null,
           price: Number(values.price),
           category_id: values.category_id || null,
-          image_url: imageUrl || null,
+          images,
         });
       } else {
         await productService.createProduct({
@@ -88,7 +94,7 @@ export default function ProductFormPage() {
           price: Number(values.price),
           stock_inicial: Number(values.stock_inicial || 0),
           category_id: values.category_id || null,
-          image_url: imageUrl || null,
+          images,
         });
       }
       setToast({ type: 'success', message: 'Producto guardado correctamente' });
@@ -198,12 +204,8 @@ export default function ProductFormPage() {
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Imagen</label>
-              <ImageUploader
-                catalogId={catalogId}
-                currentUrl={imageUrl}
-                onUpload={(url) => setImageUrl(url)}
-              />
+              <label className="mb-1 block text-sm font-medium text-gray-700">Imágenes</label>
+              <MultiImageUploader catalogId={catalogId} images={images} onChange={setImages} />
             </div>
 
             {error && (
