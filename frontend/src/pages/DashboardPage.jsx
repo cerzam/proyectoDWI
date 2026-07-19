@@ -135,13 +135,6 @@ export default function DashboardPage() {
     }
   };
 
-  const handleRequestPro = () => {
-    setToast({
-      type: 'success',
-      message: 'La activación del Plan Pro se gestiona manualmente por ahora.',
-    });
-  };
-
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -218,7 +211,7 @@ export default function DashboardPage() {
           {catalog.plan !== 'pro' && (
             <button
               type="button"
-              onClick={handleRequestPro}
+              onClick={() => navigate('/dashboard/upgrade')}
               className="rounded-lg border border-brand-400 px-4 py-2 text-sm font-medium text-brand-600 hover:bg-brand-50"
             >
               Solicitar Plan Pro
