@@ -82,6 +82,7 @@ CREATE TABLE IF NOT EXISTS public.products (
     price        NUMERIC(10, 2) NOT NULL CHECK (price >= 0),
     stock        INTEGER NOT NULL DEFAULT 0 CHECK (stock >= 0),
     image_url    TEXT,
+    images       TEXT[] NOT NULL DEFAULT '{}' CHECK (array_length(images, 1) IS NULL OR array_length(images, 1) <= 5),
     is_visible   BOOLEAN NOT NULL DEFAULT TRUE,
     position     SMALLINT NOT NULL DEFAULT 0,
     created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
