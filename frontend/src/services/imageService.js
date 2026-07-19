@@ -20,4 +20,9 @@ export const imageService = {
     const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
     return data.publicUrl;
   },
+
+  /** Sube varios archivos en paralelo y devuelve sus URLs públicas, en el mismo orden. */
+  async uploadImages(files, catalogId) {
+    return Promise.all(files.map((file) => this.uploadImage(file, catalogId)));
+  },
 };
