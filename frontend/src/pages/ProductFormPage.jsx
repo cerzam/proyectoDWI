@@ -6,6 +6,7 @@ import { categoryService } from '../services/categoryService.js';
 import { productService } from '../services/productService.js';
 import MultiImageUploader from '../components/MultiImageUploader.jsx';
 import Toast from '../components/Toast.jsx';
+import { getProductImages } from '../utils/productImage.js';
 
 const LIMIT_MESSAGE = 'Has alcanzado el límite de 10 productos de tu plan gratuito.';
 const LIMIT_HELP = 'Puedes eliminar un producto existente o solicitar el Plan Pro para registrar más.';
@@ -54,13 +55,7 @@ export default function ProductFormPage() {
         if (isEdit) {
           const { product } = await productService.getProduct(id);
           if (!active) return;
-          setImages(
-            Array.isArray(product.images) && product.images.length > 0
-              ? product.images
-              : product.image_url
-                ? [product.image_url]
-                : []
-          );
+          setImages(getProductImages(product));
           reset({
             name: product.name,
             description: product.description || '',

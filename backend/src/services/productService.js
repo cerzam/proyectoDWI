@@ -1,5 +1,9 @@
 import { supabase } from '../lib/supabase.js';
 import { catalogService } from './catalogService.js';
+import {
+  withPrimaryProductImage,
+  withPrimaryProductImages,
+} from '../utils/productImage.js';
 
 function httpError(status, message, metadata = {}) {
   const err = new Error(message);
@@ -19,7 +23,7 @@ export const productService = {
       .order('position', { ascending: true })
       .order('created_at', { ascending: true });
     if (error) throw httpError(500, error.message);
-    return data;
+    return withPrimaryProductImages(data || []);
   },
 
   /** Obtiene un producto verificando que pertenezca al usuario. */
@@ -32,7 +36,7 @@ export const productService = {
     if (error) throw httpError(500, error.message);
     if (!product) throw httpError(404, 'Producto no encontrado');
     await catalogService.assertOwnership(userId, product.catalog_id);
-    return product;
+    return withPrimaryProductImage(product);
   },
 
   /**
@@ -93,10 +97,10 @@ export const productService = {
         .select('*')
         .eq('id', product.id)
         .single();
-      return refreshed || product;
+      return withPrimaryProductImage(refreshed || product);
     }
 
-    return product;
+    return withPrimaryProductImage(product);
   },
 
   async update(userId, productId, data) {
@@ -113,7 +117,7 @@ export const productService = {
       .select('*')
       .single();
     if (error) throw httpError(400, error.message);
-    return updated;
+    return withPrimaryProductImage(updated);
   },
 
   async remove(userId, productId) {
