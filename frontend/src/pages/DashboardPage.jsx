@@ -8,6 +8,9 @@ import { categoryService } from '../services/categoryService.js';
 import ProductCard from '../components/ProductCard.jsx';
 import Toast from '../components/Toast.jsx';
 
+const LIMIT_MESSAGE = 'Has alcanzado el límite de 10 productos de tu plan gratuito.';
+const LIMIT_HELP = 'Puedes eliminar un producto existente o solicitar el Plan Pro para registrar más.';
+
 export default function DashboardPage() {
   const navigate = useNavigate();
   const [catalog, setCatalog] = useState(null);
@@ -19,6 +22,8 @@ export default function DashboardPage() {
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
   const [toast, setToast] = useState(null);
+
+  const canCreateProduct = catalog?.can_create_product !== false;
 
   const loadProducts = useCallback(async (catalogId) => {
     try {
@@ -122,12 +127,19 @@ export default function DashboardPage() {
     if (!window.confirm(`¿Eliminar "${product.name}"? Esta acción no se puede deshacer.`)) return;
     try {
       await productService.deleteProduct(product.id);
-      await loadProducts(catalog.id);
+      await loadCatalog();
       setToast({ type: 'success', message: 'Producto eliminado correctamente' });
     } catch (err) {
       setError(err.message);
       setToast({ type: 'error', message: err.message });
     }
+  };
+
+  const handleRequestPro = () => {
+    setToast({
+      type: 'success',
+      message: 'La activación del Plan Pro se gestiona manualmente por ahora.',
+    });
   };
 
   if (loading) {
@@ -166,7 +178,8 @@ export default function DashboardPage() {
             </button>
             <button
               onClick={() => navigate('/dashboard/products/new')}
-              className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-900"
+              disabled={!canCreateProduct}
+              className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-medium text-white hover:bg-brand-900 disabled:cursor-not-allowed disabled:opacity-50"
             >
               Agregar producto
             </button>
@@ -184,6 +197,34 @@ export default function DashboardPage() {
         {error && (
           <div className="mb-4 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
         )}
+
+        <section className="mb-8 flex flex-wrap items-center justify-between gap-4 rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-100">
+          <div>
+            <p className="font-serif text-lg font-semibold text-brand-900">
+              {catalog.plan === 'pro' ? 'Plan Pro' : 'Plan gratuito'}
+            </p>
+            <p className="mt-1 text-sm text-gray-600">
+              {catalog.plan === 'pro'
+                ? `${catalog.product_count} productos registrados`
+                : `${catalog.product_count} de ${catalog.product_limit} productos utilizados`}
+            </p>
+            {!canCreateProduct && (
+              <div className="mt-3 text-sm text-amber-800">
+                <p className="font-medium">{LIMIT_MESSAGE}</p>
+                <p>{LIMIT_HELP}</p>
+              </div>
+            )}
+          </div>
+          {catalog.plan !== 'pro' && (
+            <button
+              type="button"
+              onClick={handleRequestPro}
+              className="rounded-lg border border-brand-400 px-4 py-2 text-sm font-medium text-brand-600 hover:bg-brand-50"
+            >
+              Solicitar Plan Pro
+            </button>
+          )}
+        </section>
 
         <section className="mb-8 rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-100">
           <h2 className="font-serif text-lg font-semibold text-brand-900">Categorías</h2>
@@ -232,7 +273,8 @@ export default function DashboardPage() {
             <p className="text-gray-500">Aún no tienes productos.</p>
             <button
               onClick={() => navigate('/dashboard/products/new')}
-              className="mt-4 rounded-lg bg-brand-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-brand-900"
+              disabled={!canCreateProduct}
+              className="mt-4 rounded-lg bg-brand-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-brand-900 disabled:cursor-not-allowed disabled:opacity-50"
             >
               Agregar tu primer producto
             </button>
