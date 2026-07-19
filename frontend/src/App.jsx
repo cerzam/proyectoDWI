@@ -4,10 +4,12 @@ import LoginPage from './pages/LoginPage.jsx';
 import RegisterPage from './pages/RegisterPage.jsx';
 import ForgotPasswordPage from './pages/ForgotPasswordPage.jsx';
 import ResetPasswordPage from './pages/ResetPasswordPage.jsx';
+import SessionExpiredPage from './pages/SessionExpiredPage.jsx';
 import DashboardPage from './pages/DashboardPage.jsx';
 import ProductFormPage from './pages/ProductFormPage.jsx';
 import InventoryPage from './pages/InventoryPage.jsx';
 import PublicCatalogPage from './pages/PublicCatalogPage.jsx';
+import PublicProductDetailPage from './pages/PublicProductDetailPage.jsx';
 
 export default function App() {
   return (
@@ -17,6 +19,7 @@ export default function App() {
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
+      <Route path="/session-expired" element={<SessionExpiredPage />} />
 
       <Route element={<PrivateRoute />}>
         <Route path="/dashboard" element={<DashboardPage />} />
@@ -26,6 +29,7 @@ export default function App() {
       </Route>
 
       <Route path="/c/:slug" element={<PublicCatalogPage />} />
+      <Route path="/c/:slug/producto/:id" element={<PublicProductDetailPage />} />
     </Routes>
   );
 }

@@ -1,5 +1,5 @@
-const PLACEHOLDER =
-  'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><rect width="100%25" height="100%25" fill="%23E1F5EE"/><text x="50%25" y="50%25" font-family="sans-serif" font-size="20" fill="%230F6E56" text-anchor="middle" dominant-baseline="middle">Sin imagen</text></svg>';
+import { Link } from 'react-router-dom';
+import { PLACEHOLDER_IMAGE } from '../utils/productImage';
 
 function formatPrice(value) {
   return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(
@@ -13,12 +13,14 @@ function formatPrice(value) {
  *  - product
  *  - publicView: si true, muestra botón de WhatsApp en vez de acciones de gestión.
  *  - whatsapp: número del catálogo (solo vista pública).
+ *  - slug: slug del catálogo, usado para enlazar al detalle del producto (solo vista pública).
  *  - onEdit, onInventory, onToggleVisible, onDelete: acciones (modo dashboard).
  */
 export default function ProductCard({
   product,
   publicView = false,
   whatsapp,
+  slug,
   onEdit,
   onInventory,
   onToggleVisible,
@@ -31,15 +33,18 @@ export default function ProductCard({
     return `https://wa.me/${whatsapp}?text=${text}`;
   };
 
+  const ImageWrapper = publicView ? Link : 'div';
+  const imageWrapperProps = publicView ? { to: `/c/${slug}/producto/${product.id}` } : {};
+
   return (
     <div className="flex flex-col overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-gray-100">
-      <div className="relative aspect-[4/3] bg-gray-50">
+      <ImageWrapper {...imageWrapperProps} className="relative aspect-[4/3] block bg-gray-50">
         <img
-          src={product.image_url || PLACEHOLDER}
+          src={product.image_url || PLACEHOLDER_IMAGE}
           alt={product.name}
           className="h-full w-full object-cover"
           onError={(e) => {
-            e.currentTarget.src = PLACEHOLDER;
+            e.currentTarget.src = PLACEHOLDER_IMAGE;
           }}
         />
         {publicView ? (
@@ -59,10 +64,16 @@ export default function ProductCard({
             {product.is_visible ? 'Visible' : 'Oculto'}
           </span>
         )}
-      </div>
+      </ImageWrapper>
 
       <div className="flex flex-1 flex-col p-4">
-        <h3 className="font-serif text-lg font-semibold text-gray-900">{product.name}</h3>
+        {publicView ? (
+          <Link to={`/c/${slug}/producto/${product.id}`} className="hover:underline">
+            <h3 className="font-serif text-lg font-semibold text-gray-900">{product.name}</h3>
+          </Link>
+        ) : (
+          <h3 className="font-serif text-lg font-semibold text-gray-900">{product.name}</h3>
+        )}
         {product.description && (
           <p className="mt-1 line-clamp-2 text-sm text-gray-500">{product.description}</p>
         )}

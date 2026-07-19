@@ -1,6 +1,31 @@
 import { supabase } from './supabaseClient.js';
 
 const API_URL = import.meta.env.VITE_API_URL || '';
+const SESSION_EXPIRED_MESSAGE = 'Tu sesión expiró. Inicia sesión nuevamente.';
+
+async function parseResponse(response) {
+  if (response.status === 204) return null;
+
+  const text = await response.text();
+  if (!text) return null;
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { error: text };
+  }
+}
+
+async function handleExpiredSession() {
+  try {
+    await supabase.auth.signOut();
+  } catch {
+    // ignorar: la sesión ya está inválida
+  }
+
+  window.location.assign('/session-expired');
+  throw new Error(SESSION_EXPIRED_MESSAGE);
+}
 
 /**
  * Cliente HTTP con autenticación automática.
@@ -14,28 +39,39 @@ export async function apiClient(path, options = {}) {
     data: { session },
   } = await supabase.auth.getSession();
 
-  const headers = {
-    'Content-Type': 'application/json',
-    ...(options.headers || {}),
+  const buildHeaders = (accessToken) => {
+    const headers = {
+      'Content-Type': 'application/json',
+      ...(options.headers || {}),
+    };
+
+    if (accessToken) {
+      headers.Authorization = `Bearer ${accessToken}`;
+    }
+
+    return headers;
   };
 
-  if (session?.access_token) {
-    headers.Authorization = `Bearer ${session.access_token}`;
-  }
+  const request = (accessToken) =>
+    fetch(`${API_URL}${path}`, { ...options, headers: buildHeaders(accessToken) });
 
-  const response = await fetch(`${API_URL}${path}`, { ...options, headers });
+  let response = await request(session?.access_token);
 
-  if (response.status === 204) return null;
+  if (response.status === 401) {
+    const { data, error } = await supabase.auth.refreshSession();
 
-  let payload = null;
-  const text = await response.text();
-  if (text) {
-    try {
-      payload = JSON.parse(text);
-    } catch {
-      payload = { error: text };
+    if (!error && data.session?.access_token) {
+      response = await request(data.session.access_token);
+    } else {
+      await handleExpiredSession();
     }
   }
+
+  if (response.status === 401) {
+    await handleExpiredSession();
+  }
+
+  const payload = await parseResponse(response);
 
   if (!response.ok) {
     const message = payload?.error || `Error ${response.status}`;
