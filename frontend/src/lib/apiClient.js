@@ -75,7 +75,11 @@ export async function apiClient(path, options = {}) {
 
   if (!response.ok) {
     const message = payload?.error || `Error ${response.status}`;
-    throw new Error(message);
+    const requestError = new Error(message);
+    requestError.status = response.status;
+    if (payload?.code) requestError.code = payload.code;
+    if (payload?.details) requestError.details = payload.details;
+    throw requestError;
   }
 
   return payload;

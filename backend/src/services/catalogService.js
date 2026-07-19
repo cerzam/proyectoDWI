@@ -6,7 +6,44 @@ function httpError(status, message) {
   return err;
 }
 
+const FREE_PRODUCT_LIMIT = 10;
+
+async function getAccountQuota(userId) {
+  const [userResult, catalogsResult] = await Promise.all([
+    supabase.from('users').select('plan').eq('id', userId).maybeSingle(),
+    supabase.from('catalogs').select('id').eq('user_id', userId),
+  ]);
+
+  if (userResult.error) throw httpError(500, userResult.error.message);
+  if (!userResult.data) throw httpError(404, 'Usuario no encontrado');
+  if (catalogsResult.error) throw httpError(500, catalogsResult.error.message);
+
+  const catalogIds = (catalogsResult.data || []).map((catalog) => catalog.id);
+  let productCount = 0;
+
+  if (catalogIds.length > 0) {
+    const { count, error } = await supabase
+      .from('products')
+      .select('id', { count: 'exact', head: true })
+      .in('catalog_id', catalogIds);
+    if (error) throw httpError(500, error.message);
+    productCount = count || 0;
+  }
+
+  const plan = userResult.data.plan;
+  const productLimit = plan === 'free' ? FREE_PRODUCT_LIMIT : null;
+
+  return {
+    plan,
+    product_count: productCount,
+    product_limit: productLimit,
+    can_create_product: productLimit === null || productCount < productLimit,
+  };
+}
+
 export const catalogService = {
+  getAccountQuota,
+
   /** Catálogo del usuario autenticado + sus categorías. */
   async getMine(userId) {
     const { data: catalog, error } = await supabase
@@ -17,14 +54,18 @@ export const catalogService = {
     if (error) throw httpError(500, error.message);
     if (!catalog) return null;
 
-    const { data: categories, error: catError } = await supabase
-      .from('categories')
-      .select('*')
-      .eq('catalog_id', catalog.id)
-      .order('position', { ascending: true });
+    const [categoriesResult, quota] = await Promise.all([
+      supabase
+        .from('categories')
+        .select('*')
+        .eq('catalog_id', catalog.id)
+        .order('position', { ascending: true }),
+      getAccountQuota(userId),
+    ]);
+    const { data: categories, error: catError } = categoriesResult;
     if (catError) throw httpError(500, catError.message);
 
-    return { ...catalog, categories: categories || [] };
+    return { ...catalog, categories: categories || [], ...quota };
   },
 
   async create(userId, { name, slug, description, whatsapp }) {

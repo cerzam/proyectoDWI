@@ -50,7 +50,10 @@ app.use((_req, res) => {
 app.use((err, _req, res, _next) => {
   // eslint-disable-next-line no-console
   console.error(err);
-  res.status(err.status || 500).json({ error: err.message || 'Error interno del servidor' });
+  const payload = { error: err.message || 'Error interno del servidor' };
+  if (err.code) payload.code = err.code;
+  if (err.details) payload.details = err.details;
+  res.status(err.status || 500).json(payload);
 });
 
 app.listen(PORT, () => {

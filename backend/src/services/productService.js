@@ -1,9 +1,10 @@
 import { supabase } from '../lib/supabase.js';
 import { catalogService } from './catalogService.js';
 
-function httpError(status, message) {
+function httpError(status, message, metadata = {}) {
   const err = new Error(message);
   err.status = status;
+  Object.assign(err, metadata);
   return err;
 }
 
@@ -37,13 +38,30 @@ export const productService = {
   /**
    * Crea un producto. Flujo:
    *  1. Verificar propiedad del catálogo.
-   *  2. INSERT con stock = 0.
-   *  3. Si stock_inicial > 0 → INSERT en inventory_movements (trigger ajusta stock).
-   *  4. Devolver el producto con stock actualizado.
+   *  2. Verificar la cuota de la cuenta.
+   *  3. INSERT con stock = 0.
+   *  4. Si stock_inicial > 0 → INSERT en inventory_movements (trigger ajusta stock).
+   *  5. Devolver el producto con stock actualizado.
    */
   async create(userId, payload) {
     const { catalog_id, name, price, stock_inicial, description, category_id, images } = payload;
     await catalogService.assertOwnership(userId, catalog_id);
+
+    const quota = await catalogService.getAccountQuota(userId);
+    if (!quota.can_create_product) {
+      throw httpError(
+        409,
+        'Has alcanzado el límite de 10 productos de tu plan gratuito.',
+        {
+          code: 'PRODUCT_LIMIT_REACHED',
+          details: {
+            plan: quota.plan,
+            count: quota.product_count,
+            limit: quota.product_limit,
+          },
+        }
+      );
+    }
 
     const { data: product, error } = await supabase
       .from('products')
