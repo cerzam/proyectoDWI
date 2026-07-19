@@ -28,6 +28,16 @@ export function validateCreateProduct(body = {}) {
     errors.push('category_id debe ser un UUID válido');
   }
 
+  if (images !== undefined && images !== null) {
+    if (!Array.isArray(images)) {
+      errors.push('images debe ser un arreglo de URLs');
+    } else if (images.length > 5) {
+      errors.push('No se pueden asociar más de 5 imágenes por producto');
+    } else if (images.some((img) => typeof img !== 'string' || !img.trim())) {
+      errors.push('Cada imagen debe ser una URL válida');
+    }
+  }
+
   return {
     valid: errors.length === 0,
     errors,
@@ -38,7 +48,7 @@ export function validateCreateProduct(body = {}) {
       stock_inicial: stock,
       description: description ?? null,
       category_id: category_id || null,
-      images: Array.isArray(images) ? images : null,
+      images: Array.isArray(images) ? images : [],
     },
   };
 }
@@ -72,7 +82,15 @@ export function validateUpdateProduct(body = {}) {
     }
   }
   if (body.images !== undefined) {
-    data.images = Array.isArray(body.images) ? body.images : null;
+    if (!Array.isArray(body.images)) {
+      errors.push('images debe ser un arreglo de URLs');
+    } else if (body.images.length > 5) {
+      errors.push('No se pueden asociar más de 5 imágenes por producto');
+    } else if (body.images.some((img) => typeof img !== 'string' || !img.trim())) {
+      errors.push('Cada imagen debe ser una URL válida');
+    } else {
+      data.images = body.images;
+    }
   }
   if (body.is_visible !== undefined) data.is_visible = Boolean(body.is_visible);
   if (body.position !== undefined) {
