@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase.js';
+import { withPrimaryProductImages } from '../utils/productImage.js';
 
 function httpError(status, message) {
   const err = new Error(message);
@@ -37,7 +38,7 @@ export const publicService = {
       ascending: true,
     });
     if (prodError) throw httpError(500, prodError.message);
-    const visibleProducts = products || [];
+    const visibleProducts = withPrimaryProductImages(products || []);
     const totalProducts = visibleProducts.length;
 
     const { data: categories, error: catError } = await supabase
