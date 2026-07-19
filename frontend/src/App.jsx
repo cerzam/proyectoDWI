@@ -6,6 +6,7 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage.jsx';
 import ResetPasswordPage from './pages/ResetPasswordPage.jsx';
 import SessionExpiredPage from './pages/SessionExpiredPage.jsx';
 import DashboardPage from './pages/DashboardPage.jsx';
+import UpgradePlanPage from './pages/UpgradePlanPage.jsx';
 import ProductFormPage from './pages/ProductFormPage.jsx';
 import InventoryPage from './pages/InventoryPage.jsx';
 import PublicCatalogPage from './pages/PublicCatalogPage.jsx';
@@ -23,6 +24,7 @@ export default function App() {
 
       <Route element={<PrivateRoute />}>
         <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/dashboard/upgrade" element={<UpgradePlanPage />} />
         <Route path="/dashboard/products/new" element={<ProductFormPage />} />
         <Route path="/dashboard/products/:id/edit" element={<ProductFormPage />} />
         <Route path="/dashboard/inventory/:productId" element={<InventoryPage />} />
