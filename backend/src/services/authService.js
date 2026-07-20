@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabase.js';
+import { createSupabaseSessionClient, supabase } from '../lib/supabase.js';
 import { sendWelcomeEmail } from './emailService.js';
 
 /** Error helper con status HTTP. */
@@ -19,7 +19,8 @@ export const authService = {
     if (error) throw httpError(400, error.message);
 
     // Generar sesión iniciando con la contraseña recién creada
-    const { data: session, error: signInError } = await supabase.auth.signInWithPassword({
+    const sessionClient = createSupabaseSessionClient();
+    const { data: session, error: signInError } = await sessionClient.auth.signInWithPassword({
       email,
       password,
     });
@@ -39,7 +40,8 @@ export const authService = {
   },
 
   async login({ email, password }) {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    const sessionClient = createSupabaseSessionClient();
+    const { data, error } = await sessionClient.auth.signInWithPassword({ email, password });
     if (error) throw httpError(401, error.message);
     return { user: data.user, session: data.session };
   },
