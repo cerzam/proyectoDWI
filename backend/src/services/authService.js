@@ -2,10 +2,32 @@ import { createSupabaseSessionClient, supabase } from '../lib/supabase.js';
 import { sendWelcomeEmail } from './emailService.js';
 
 /** Error helper con status HTTP. */
-function httpError(status, message) {
+function httpError(status, message, code) {
   const err = new Error(message);
   err.status = status;
+  if (code) err.code = code;
   return err;
+}
+
+async function assertAccountCanSignIn(userId, accessToken) {
+  const { data: account, error } = await supabase
+    .from('users')
+    .select('status')
+    .eq('id', userId)
+    .maybeSingle();
+
+  if (error) throw httpError(500, error.message);
+  if (!account) throw httpError(403, 'No existe un perfil para esta cuenta', 'ACCOUNT_PROFILE_MISSING');
+
+  if (account.status === 'suspended' || account.status === 'deleted') {
+    await supabase.auth.admin.signOut(accessToken).catch(() => {});
+    const isSuspended = account.status === 'suspended';
+    throw httpError(
+      403,
+      isSuspended ? 'Esta cuenta está suspendida' : 'Esta cuenta fue eliminada',
+      isSuspended ? 'ACCOUNT_SUSPENDED' : 'ACCOUNT_DELETED'
+    );
+  }
 }
 
 export const authService = {
@@ -43,6 +65,7 @@ export const authService = {
     const sessionClient = createSupabaseSessionClient();
     const { data, error } = await sessionClient.auth.signInWithPassword({ email, password });
     if (error) throw httpError(401, error.message);
+    await assertAccountCanSignIn(data.user.id, data.session.access_token);
     return { user: data.user, session: data.session };
   },
 

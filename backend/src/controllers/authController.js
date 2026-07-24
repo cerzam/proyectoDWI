@@ -2,6 +2,10 @@ import { authService } from '../services/authService.js';
 import { validatePassword, buildPasswordError } from '../validators/auth.js';
 
 export const authController = {
+  me(req, res) {
+    return res.status(200).json({ user: req.account });
+  },
+
   async register(req, res, next) {
     try {
       const { email, password, full_name } = req.body || {};

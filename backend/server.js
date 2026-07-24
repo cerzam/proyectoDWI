@@ -9,6 +9,7 @@ import productRoutes from './src/routes/products.js';
 import categoryRoutes from './src/routes/categories.js';
 import inventoryRoutes from './src/routes/inventory.js';
 import publicRoutes from './src/routes/public.js';
+import adminRoutes from './src/routes/admin.js';
 
 dotenv.config();
 
@@ -38,6 +39,7 @@ app.use('/api/catalog', catalogRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/inventory', inventoryRoutes);
+app.use('/api/admin', adminRoutes);
 app.use('/api/public', publicRoutes);
 
 // 404

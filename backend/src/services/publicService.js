@@ -17,9 +17,10 @@ export const publicService = {
   async getCatalogBySlug(slug, category = null) {
     const { data: catalog, error } = await supabase
       .from('catalogs')
-      .select('id, name, slug, description, whatsapp, is_active')
+      .select('id, name, slug, description, whatsapp, is_active, owner:users!inner(status)')
       .eq('slug', slug)
       .eq('is_active', true)
+      .eq('owner.status', 'active')
       .maybeSingle();
     if (error) throw httpError(500, error.message);
     if (!catalog) throw httpError(404, 'Catálogo no encontrado');
