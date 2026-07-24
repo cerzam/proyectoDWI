@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient.js';
 import { catalogService } from '../services/catalogService.js';
+import { useAuth } from '../context/AuthContext.jsx';
 import { productService } from '../services/productService.js';
 import { categoryService } from '../services/categoryService.js';
 import ProductCard from '../components/ProductCard.jsx';
@@ -13,6 +14,7 @@ const LIMIT_HELP = 'Puedes eliminar un producto existente o solicitar el Plan Pr
 
 export default function DashboardPage() {
   const navigate = useNavigate();
+  const { account } = useAuth();
   const [catalog, setCatalog] = useState(null);
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -144,7 +146,14 @@ export default function DashboardPage() {
   }
 
   if (!catalog) {
-    return <CreateCatalogForm onCreated={loadCatalog} onLogout={handleLogout} error={error} />;
+    return (
+      <CreateCatalogForm
+        onCreated={loadCatalog}
+        onLogout={handleLogout}
+        error={error}
+        isAdmin={account?.role === 'admin'}
+      />
+    );
   }
 
   return (
@@ -157,6 +166,14 @@ export default function DashboardPage() {
             <p className="text-sm text-gray-500">/c/{catalog.slug}</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
+            {account?.role === 'admin' && (
+              <button
+                onClick={() => navigate('/admin')}
+                className="rounded-lg border border-purple-300 px-4 py-2 text-sm font-medium text-purple-700 hover:bg-purple-50"
+              >
+                Administración
+              </button>
+            )}
             <button
               onClick={handleCopyLink}
               className="rounded-lg border border-brand-400 px-4 py-2 text-sm font-medium text-brand-600 hover:bg-brand-50"
@@ -291,7 +308,7 @@ export default function DashboardPage() {
   );
 }
 
-function CreateCatalogForm({ onCreated, onLogout, error }) {
+function CreateCatalogForm({ onCreated, onLogout, error, isAdmin }) {
   const {
     register,
     handleSubmit,
@@ -325,9 +342,20 @@ function CreateCatalogForm({ onCreated, onLogout, error }) {
       <div className="mx-auto max-w-lg rounded-2xl bg-white p-8 shadow-lg">
         <div className="mb-6 flex items-center justify-between">
           <h1 className="font-serif text-2xl font-bold text-brand-900">Crea tu catálogo</h1>
-          <button onClick={onLogout} className="text-sm text-gray-500 hover:underline">
-            Salir
-          </button>
+          <div className="flex items-center gap-3">
+            {isAdmin && (
+              <button
+                type="button"
+                onClick={() => window.location.assign('/admin')}
+                className="text-sm font-medium text-purple-700 hover:underline"
+              >
+                Administración
+              </button>
+            )}
+            <button onClick={onLogout} className="text-sm text-gray-500 hover:underline">
+              Salir
+            </button>
+          </div>
         </div>
         <p className="mb-6 text-gray-500">
           Configura los datos de tu negocio para empezar a publicar productos.

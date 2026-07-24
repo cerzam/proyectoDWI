@@ -27,6 +27,20 @@ async function handleExpiredSession() {
   throw new Error(SESSION_EXPIRED_MESSAGE);
 }
 
+async function handleUnavailableAccount(code) {
+  const target = code === 'ACCOUNT_SUSPENDED' ? '/account-suspended' : '/account-deleted';
+
+  try {
+    await supabase.auth.signOut({ scope: 'local' });
+  } catch {
+    // La navegación sigue siendo necesaria aunque Supabase ya haya limpiado la sesión.
+  }
+
+  if (window.location.pathname !== target) {
+    window.location.assign(target);
+  }
+}
+
 /**
  * Cliente HTTP con autenticación automática.
  * - Obtiene la sesión de Supabase y adjunta Authorization: Bearer {access_token}.
@@ -72,6 +86,13 @@ export async function apiClient(path, options = {}) {
   }
 
   const payload = await parseResponse(response);
+
+  if (
+    response.status === 403 &&
+    ['ACCOUNT_SUSPENDED', 'ACCOUNT_DELETED'].includes(payload?.code)
+  ) {
+    await handleUnavailableAccount(payload.code);
+  }
 
   if (!response.ok) {
     const message = payload?.error || `Error ${response.status}`;

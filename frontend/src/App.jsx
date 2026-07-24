@@ -1,5 +1,6 @@
 import { Routes, Route } from 'react-router-dom';
 import PrivateRoute from './components/PrivateRoute.jsx';
+import AdminRoute from './components/AdminRoute.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import RegisterPage from './pages/RegisterPage.jsx';
 import ForgotPasswordPage from './pages/ForgotPasswordPage.jsx';
@@ -11,6 +12,8 @@ import ProductFormPage from './pages/ProductFormPage.jsx';
 import InventoryPage from './pages/InventoryPage.jsx';
 import PublicCatalogPage from './pages/PublicCatalogPage.jsx';
 import PublicProductDetailPage from './pages/PublicProductDetailPage.jsx';
+import AccountUnavailablePage from './pages/AccountUnavailablePage.jsx';
+import AdminPage from './pages/AdminPage.jsx';
 
 export default function App() {
   return (
@@ -21,6 +24,11 @@ export default function App() {
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/session-expired" element={<SessionExpiredPage />} />
+      <Route
+        path="/account-suspended"
+        element={<AccountUnavailablePage type="suspended" />}
+      />
+      <Route path="/account-deleted" element={<AccountUnavailablePage type="deleted" />} />
 
       <Route element={<PrivateRoute />}>
         <Route path="/dashboard" element={<DashboardPage />} />
@@ -28,6 +36,9 @@ export default function App() {
         <Route path="/dashboard/products/new" element={<ProductFormPage />} />
         <Route path="/dashboard/products/:id/edit" element={<ProductFormPage />} />
         <Route path="/dashboard/inventory/:productId" element={<InventoryPage />} />
+        <Route element={<AdminRoute />}>
+          <Route path="/admin" element={<AdminPage />} />
+        </Route>
       </Route>
 
       <Route path="/c/:slug" element={<PublicCatalogPage />} />
