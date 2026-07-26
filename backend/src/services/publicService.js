@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase.js';
+import { withPrimaryProductImages } from '../utils/productImage.js';
 
 function httpError(status, message) {
   const err = new Error(message);
@@ -16,16 +17,17 @@ export const publicService = {
   async getCatalogBySlug(slug, category = null) {
     const { data: catalog, error } = await supabase
       .from('catalogs')
-      .select('id, name, slug, description, whatsapp, is_active')
+      .select('id, name, slug, description, whatsapp, is_active, owner:users!inner(status)')
       .eq('slug', slug)
       .eq('is_active', true)
+      .eq('owner.status', 'active')
       .maybeSingle();
     if (error) throw httpError(500, error.message);
     if (!catalog) throw httpError(404, 'Catálogo no encontrado');
 
     let productsQuery = supabase
       .from('products')
-      .select('id, name, description, price, stock, image_url, category_id, position')
+      .select('id, name, description, price, stock, image_url, images, category_id, position')
       .eq('catalog_id', catalog.id)
       .eq('is_visible', true);
 
@@ -37,7 +39,7 @@ export const publicService = {
       ascending: true,
     });
     if (prodError) throw httpError(500, prodError.message);
-    const visibleProducts = products || [];
+    const visibleProducts = withPrimaryProductImages(products || []);
     const totalProducts = visibleProducts.length;
 
     const { data: categories, error: catError } = await supabase

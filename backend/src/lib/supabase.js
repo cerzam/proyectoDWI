@@ -28,3 +28,15 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
     persistSession: false,
   },
 });
+
+// Los inicios de sesión cambian el token de autorización del cliente que los
+// ejecuta. Usar un cliente nuevo por solicitud evita que una sesión de usuario
+// reemplace las credenciales service_role del cliente administrativo global.
+export function createSupabaseSessionClient() {
+  return createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  });
+}

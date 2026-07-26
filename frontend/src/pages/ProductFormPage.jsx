@@ -4,8 +4,12 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { catalogService } from '../services/catalogService.js';
 import { categoryService } from '../services/categoryService.js';
 import { productService } from '../services/productService.js';
-import ImageUploader from '../components/ImageUploader.jsx';
+import MultiImageUploader from '../components/MultiImageUploader.jsx';
 import Toast from '../components/Toast.jsx';
+import { getProductImages } from '../utils/productImage.js';
+
+const LIMIT_MESSAGE = 'Has alcanzado el límite de 10 productos de tu plan gratuito.';
+const LIMIT_HELP = 'Puedes eliminar un producto existente o solicitar el Plan Pro para registrar más.';
 
 export default function ProductFormPage() {
   const { id } = useParams();
@@ -21,11 +25,12 @@ export default function ProductFormPage() {
 
   const [catalogId, setCatalogId] = useState(null);
   const [categories, setCategories] = useState([]);
-  const [imageUrl, setImageUrl] = useState('');
+  const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [toast, setToast] = useState(null);
+  const [canCreateProduct, setCanCreateProduct] = useState(true);
 
   useEffect(() => {
     let active = true;
@@ -40,6 +45,7 @@ export default function ProductFormPage() {
         }
         if (!active) return;
         setCatalogId(catalog.id);
+        setCanCreateProduct(catalog.can_create_product !== false);
 
         // Cargar categorías del catálogo: GET /api/categories?catalog_id=uuid
         const cats = await categoryService.getCategories(catalog.id);
@@ -49,7 +55,7 @@ export default function ProductFormPage() {
         if (isEdit) {
           const { product } = await productService.getProduct(id);
           if (!active) return;
-          setImageUrl(product.image_url || '');
+          setImages(getProductImages(product));
           reset({
             name: product.name,
             description: product.description || '',
@@ -69,6 +75,11 @@ export default function ProductFormPage() {
   }, [id, isEdit, navigate, reset]);
 
   const onSubmit = async (values) => {
+    if (!isEdit && !canCreateProduct) {
+      setError(`${LIMIT_MESSAGE} ${LIMIT_HELP}`);
+      return;
+    }
+
     setSubmitting(true);
     setError('');
     try {
@@ -78,7 +89,7 @@ export default function ProductFormPage() {
           description: values.description || null,
           price: Number(values.price),
           category_id: values.category_id || null,
-          image_url: imageUrl || null,
+          images,
         });
       } else {
         await productService.createProduct({
@@ -88,14 +99,19 @@ export default function ProductFormPage() {
           price: Number(values.price),
           stock_inicial: Number(values.stock_inicial || 0),
           category_id: values.category_id || null,
-          image_url: imageUrl || null,
+          images,
         });
       }
       setToast({ type: 'success', message: 'Producto guardado correctamente' });
       window.setTimeout(() => navigate('/dashboard'), 700);
     } catch (err) {
-      setError(err.message);
-      setToast({ type: 'error', message: err.message });
+      const message =
+        err.code === 'PRODUCT_LIMIT_REACHED'
+          ? `${LIMIT_MESSAGE} ${LIMIT_HELP}`
+          : err.message;
+      if (err.code === 'PRODUCT_LIMIT_REACHED') setCanCreateProduct(false);
+      setError(message);
+      setToast({ type: 'error', message });
       setSubmitting(false);
     }
   };
@@ -198,23 +214,26 @@ export default function ProductFormPage() {
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Imagen</label>
-              <ImageUploader
-                catalogId={catalogId}
-                currentUrl={imageUrl}
-                onUpload={(url) => setImageUrl(url)}
-              />
+              <label className="mb-1 block text-sm font-medium text-gray-700">Imágenes</label>
+              <MultiImageUploader catalogId={catalogId} images={images} onChange={setImages} />
             </div>
 
             {error && (
               <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>
             )}
 
+            {!isEdit && !canCreateProduct && (
+              <div className="mt-5 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                <p className="font-medium">{LIMIT_MESSAGE}</p>
+                <p>{LIMIT_HELP}</p>
+              </div>
+            )}
+
             <div className="flex gap-3">
               <button
                 type="submit"
-                disabled={submitting}
-                className="rounded-lg bg-brand-600 px-6 py-2.5 font-medium text-white hover:bg-brand-900 disabled:opacity-60"
+                disabled={submitting || (!isEdit && !canCreateProduct)}
+                className="rounded-lg bg-brand-600 px-6 py-2.5 font-medium text-white hover:bg-brand-900 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {submitting ? 'Guardando…' : 'Guardar'}
               </button>

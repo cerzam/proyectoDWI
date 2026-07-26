@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext.jsx';
 import PasswordInput from '../components/PasswordInput.jsx';
 
 export default function LoginPage() {
-  const { session, loading } = useAuth();
+  const { session, account, initialLoading, refreshProfile } = useAuth();
   const navigate = useNavigate();
   const {
     register,
@@ -16,18 +16,27 @@ export default function LoginPage() {
   const [serverError, setServerError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  if (!loading && session) return <Navigate to="/dashboard" replace />;
+  if (!initialLoading && session && account) return <Navigate to="/dashboard" replace />;
 
   const onSubmit = async ({ email, password }) => {
     setSubmitting(true);
     setServerError('');
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-    setSubmitting(false);
     if (error) {
+      setSubmitting(false);
       setServerError(error.message || 'No se pudo iniciar sesión');
       return;
     }
-    navigate('/dashboard');
+    try {
+      await refreshProfile({ force: true, reason: 'sign-in' });
+      navigate('/dashboard');
+    } catch (profileError) {
+      if (!['ACCOUNT_SUSPENDED', 'ACCOUNT_DELETED'].includes(profileError.code)) {
+        setServerError(profileError.message || 'No se pudo validar el estado de la cuenta');
+      }
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (

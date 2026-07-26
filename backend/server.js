@@ -9,6 +9,7 @@ import productRoutes from './src/routes/products.js';
 import categoryRoutes from './src/routes/categories.js';
 import inventoryRoutes from './src/routes/inventory.js';
 import publicRoutes from './src/routes/public.js';
+import adminRoutes from './src/routes/admin.js';
 
 dotenv.config();
 
@@ -38,6 +39,7 @@ app.use('/api/catalog', catalogRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/inventory', inventoryRoutes);
+app.use('/api/admin', adminRoutes);
 app.use('/api/public', publicRoutes);
 
 // 404
@@ -50,7 +52,10 @@ app.use((_req, res) => {
 app.use((err, _req, res, _next) => {
   // eslint-disable-next-line no-console
   console.error(err);
-  res.status(err.status || 500).json({ error: err.message || 'Error interno del servidor' });
+  const payload = { error: err.message || 'Error interno del servidor' };
+  if (err.code) payload.code = err.code;
+  if (err.details) payload.details = err.details;
+  res.status(err.status || 500).json(payload);
 });
 
 app.listen(PORT, () => {

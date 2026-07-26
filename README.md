@@ -106,9 +106,114 @@ API en [http://localhost:3000](http://localhost:3000).
    Authentication, luego ejecuta el seed con su UUID).
 5. Copia las claves de **Settings → API** a tus archivos `.env`.
 
+Si la base de datos ya existe, ejecuta en orden las migraciones de
+`supabase/migrations/`. Para habilitar la administración de cuentas ejecuta
+`202607230001_add_admin_account_management.sql`. La migración conserva todos los
+usuarios existentes con los valores predeterminados `role = 'user'` y
+`status = 'active'`; nunca crea ni promueve automáticamente un administrador.
+
 > **Nota de seguridad:** el backend usa la `SERVICE_ROLE_KEY`, que **omite RLS**.
 > Por eso cada endpoint protegido valida que el recurso pertenezca al usuario
 > autenticado (`req.user.id`) y responde **403** si no es así.
+
+## Cómo acceder al panel administrativo
+
+No existe un login administrativo separado. El administrador inicia sesión desde
+el formulario normal y el backend obtiene su rol de `public.users` en cada
+petición protegida.
+
+### 1. Localizar el UUID
+
+En Supabase abre **Authentication → Users**, localiza la cuenta y copia el valor
+de la columna **User UID**. También puede consultarse en SQL Editor:
+
+```sql
+SELECT id, email
+FROM auth.users
+ORDER BY created_at DESC;
+```
+
+### 2. Convertir manualmente la primera cuenta en admin
+
+La opción recomendada es actualizar por UUID:
+
+```sql
+UPDATE public.users
+SET role = 'admin'
+WHERE id = 'REEMPLAZA-AQUI-EL-UUID'
+  AND status = 'active'
+RETURNING id, email, role, status;
+```
+
+Como alternativa, puede localizarse de forma segura por el correo de
+`auth.users`:
+
+```sql
+UPDATE public.users AS profile
+SET role = 'admin'
+FROM auth.users AS auth_user
+WHERE profile.id = auth_user.id
+  AND lower(auth_user.email) = lower('admin@ejemplo.com')
+  AND profile.status = 'active'
+RETURNING profile.id, profile.email, profile.role, profile.status;
+```
+
+Comprueba que la consulta devuelve exactamente una fila. El primer administrador
+no puede crearse desde el frontend ni mediante un endpoint público.
+
+### 3. Renovar la sesión
+
+Después del `UPDATE`, cierra la sesión de CataLog y vuelve a iniciar sesión. El
+perfil se consulta en `/api/auth/me`; el rol no se obtiene de `localStorage`.
+
+### 4. Abrir el panel
+
+- Local: [http://localhost:5173/admin](http://localhost:5173/admin)
+- Producción: `{URL_DEL_FRONTEND}/admin` (la URL de Vercel sigue marcada como
+  `TBD` en este repositorio).
+
+### 5. Verificar el bloqueo de un usuario normal
+
+Con el token de una cuenta `role = 'user'`:
+
+```bash
+curl -i -H "Authorization: Bearer TOKEN_DE_USUARIO" \
+  http://localhost:3000/api/admin/users
+```
+
+Debe responder `403` con `code = "ADMIN_REQUIRED"`. La misma protección
+`verifyJWT` + `requireAdmin` se monta antes de todas las rutas `/api/admin`.
+
+### 6. Verificar la navegación
+
+Al iniciar sesión como admin aparece **Administración** en el Dashboard y `/admin`
+es accesible. Para un usuario normal el enlace no se renderiza y la ruta React
+regresa al Dashboard; aun si llama directamente a la API, el backend responde
+`403`.
+
+## Seguridad y alcance de la gestión de cuentas
+
+- `DELETE /api/admin/users/:id` solo marca `status = 'deleted'`; no elimina
+  registros, archivos ni el usuario de Supabase Auth.
+- Suspender o eliminar no cambia `catalogs.is_active`. El catálogo público exige
+  además que el propietario esté `active`, por lo que reaparece al reactivar la
+  cuenta si ya estaba activo.
+- Cambio de plan, suspensión, reactivación y eliminación lógica se ejecutan
+  mediante RPC transaccionales junto con su registro en `admin_audit_log`.
+- Las RPC solo conceden ejecución a `service_role`. La clave
+  `SUPABASE_SERVICE_ROLE_KEY` vive exclusivamente en el backend.
+- No hay endpoints para cambiar `role`. `plan` y `status` solo se modifican bajo
+  `/api/admin` y requieren `requireAdmin`.
+
+### Eliminación permanente pendiente
+
+No se implementa porque PostgreSQL, Supabase Storage y Supabase Auth no comparten
+una transacción. Una versión futura deberá usar un trabajo recuperable e
+idempotente, registrar cada paso y reintentar fallos. El orden previsto es:
+archivos de Storage, `product_images` o referencias de imágenes,
+`inventory_movements`, `products`, `categories`, `catalogs`, `public.users` y,
+solo al final, Supabase Auth. Nunca debe informar éxito completo si algún paso
+falla.
 
 ---
 
