@@ -4,6 +4,9 @@ import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import PasswordInput from '../components/PasswordInput.jsx';
+import ActionButton from '../components/ui/ActionButton.jsx';
+import FormField from '../components/ui/FormField.jsx';
+import SectionCard from '../components/ui/SectionCard.jsx';
 
 export default function LoginPage() {
   const { session, account, initialLoading, refreshProfile } = useAuth();
@@ -40,55 +43,68 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-brand-50 px-4">
-      <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-lg">
-        <h1 className="font-serif text-3xl font-bold text-brand-900">CataLog</h1>
-        <p className="mt-1 text-gray-500">Inicia sesión en tu cuenta</p>
+    <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-brand-50 via-white to-brand-100/60 px-4 py-8">
+      <SectionCard className="w-full max-w-md shadow-lg sm:p-8" contentClassName="mt-0">
+        <div className="text-center">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-600">
+            Tu catálogo, en un solo lugar
+          </p>
+          <h1 className="mt-2 font-serif text-4xl font-bold text-brand-900">CataLog</h1>
+          <p className="mt-2 text-sm text-gray-600">Inicia sesión para administrar tu negocio.</p>
+        </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4">
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Email</label>
+        <form onSubmit={handleSubmit(onSubmit)} className="mt-7 space-y-5">
+          <FormField id="login-email" label="Correo electrónico" required error={errors.email?.message}>
             <input
+              id="login-email"
               type="email"
+              autoComplete="email"
               {...register('email', { required: 'El email es requerido' })}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
+              aria-invalid={Boolean(errors.email)}
+              className="ui-input"
             />
-            {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>}
-          </div>
+          </FormField>
 
           <div>
-            <div className="mb-1 flex items-center justify-between">
-              <label className="block text-sm font-medium text-gray-700">Contraseña</label>
+            <div className="mb-1.5 flex items-center justify-between gap-3">
+              <label htmlFor="login-password" className="block text-sm font-semibold text-gray-800">
+                Contraseña
+              </label>
               <Link to="/forgot-password" className="text-sm font-medium text-brand-600 hover:underline">
                 ¿Olvidaste tu contraseña?
               </Link>
             </div>
-            <PasswordInput {...register('password', { required: 'La contraseña es requerida' })} />
+            <PasswordInput
+              id="login-password"
+              autoComplete="current-password"
+              aria-invalid={Boolean(errors.password)}
+              {...register('password', { required: 'La contraseña es requerida' })}
+            />
             {errors.password && (
-              <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
+              <p className="ui-error" role="alert">{errors.password.message}</p>
             )}
           </div>
 
           {serverError && (
-            <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{serverError}</div>
+            <div className="ui-alert-error" role="alert">{serverError}</div>
           )}
 
-          <button
+          <ActionButton
             type="submit"
-            disabled={submitting}
-            className="w-full rounded-lg bg-brand-600 py-2.5 font-medium text-white hover:bg-brand-900 disabled:opacity-60"
+            loading={submitting}
+            fullWidth
           >
-            {submitting ? 'Entrando…' : 'Iniciar sesión'}
-          </button>
+            Iniciar sesión
+          </ActionButton>
         </form>
 
-        <p className="mt-6 text-center text-sm text-gray-500">
+        <p className="mt-6 border-t border-gray-100 pt-5 text-center text-sm text-gray-600">
           ¿No tienes cuenta?{' '}
           <Link to="/register" className="font-medium text-brand-600 hover:underline">
             Regístrate
           </Link>
         </p>
-      </div>
-    </div>
+      </SectionCard>
+    </main>
   );
 }

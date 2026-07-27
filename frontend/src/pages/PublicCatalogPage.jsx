@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import ProductCard from '../components/ProductCard.jsx';
+import ActionButton from '../components/ui/ActionButton.jsx';
+import EmptyState from '../components/ui/EmptyState.jsx';
 
 const API_URL = import.meta.env.VITE_API_URL || '';
 
@@ -68,23 +70,37 @@ export default function PublicCatalogPage() {
   const { catalog, categories, products } = data;
 
   return (
-    <div className="min-h-screen bg-brand-50/40">
-      <header className="bg-brand-600 py-10 text-center text-white">
-        <h1 className="font-serif text-4xl font-bold">{catalog.name}</h1>
-        {catalog.description && (
-          <p className="mx-auto mt-2 max-w-xl px-4 text-brand-50/90">{catalog.description}</p>
-        )}
+    <div className="ui-page">
+      <header className="border-b border-brand-900/10 bg-gradient-to-br from-brand-600 to-brand-900 text-white">
+        <div className="ui-container py-7 text-center sm:py-9">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-100">
+            Catálogo
+          </p>
+          <h1 className="mt-1 font-serif text-3xl font-bold tracking-tight sm:text-4xl">
+            {catalog.name}
+          </h1>
+          {catalog.description && (
+            <p className="mx-auto mt-2 max-w-2xl text-sm leading-6 text-brand-50/90 sm:text-base">
+              {catalog.description}
+            </p>
+          )}
+        </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-4 py-8">
+      <main className="ui-container py-5 sm:py-8">
         {categories.length > 0 && (
-          <div className="mb-6 flex flex-wrap gap-2">
+          <div
+            className="-mx-4 mb-5 flex snap-x gap-2 overflow-x-auto px-4 pb-2 sm:mx-0 sm:mb-7 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0"
+            aria-label="Filtrar por categoría"
+          >
             <button
+              type="button"
               onClick={() => setActiveCategory('all')}
-              className={`rounded-full px-4 py-1.5 text-sm font-medium ${
+              aria-pressed={activeCategory === 'all'}
+              className={`min-h-10 shrink-0 snap-start rounded-full px-4 py-2 text-sm font-semibold transition ${
                 activeCategory === 'all'
-                  ? 'bg-brand-600 text-white'
-                  : 'bg-white text-gray-600 ring-1 ring-gray-200 hover:bg-gray-50'
+                  ? 'bg-brand-600 text-white shadow-sm'
+                  : 'bg-white text-gray-700 ring-1 ring-gray-200 hover:bg-gray-50'
               }`}
             >
               Todos
@@ -92,11 +108,13 @@ export default function PublicCatalogPage() {
             {categories.map((c) => (
               <button
                 key={c.id}
+                type="button"
                 onClick={() => setActiveCategory(c.id)}
-                className={`rounded-full px-4 py-1.5 text-sm font-medium ${
+                aria-pressed={activeCategory === c.id}
+                className={`min-h-10 shrink-0 snap-start rounded-full px-4 py-2 text-sm font-semibold transition ${
                   activeCategory === c.id
-                    ? 'bg-brand-600 text-white'
-                    : 'bg-white text-gray-600 ring-1 ring-gray-200 hover:bg-gray-50'
+                    ? 'bg-brand-600 text-white shadow-sm'
+                    : 'bg-white text-gray-700 ring-1 ring-gray-200 hover:bg-gray-50'
                 }`}
               >
                 {c.name}
@@ -105,18 +123,32 @@ export default function PublicCatalogPage() {
           </div>
         )}
 
-        {filteredProducts.length === 0 ? (
-          <p className="py-12 text-center text-gray-500">No hay productos en esta categoría.</p>
+        {products.length === 0 ? (
+          <EmptyState
+            compact
+            title="Este catálogo aún no tiene productos"
+            description="Vuelve pronto para descubrir las novedades."
+          />
+        ) : filteredProducts.length === 0 ? (
+          <EmptyState
+            compact
+            title="No hay productos en esta categoría"
+            description="Prueba con otra categoría para seguir explorando."
+            action={
+              <ActionButton type="button" variant="secondary" onClick={() => setActiveCategory('all')}>
+                Ver todos
+              </ActionButton>
+            }
+          />
         ) : (
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <div
+            className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3"
+            aria-live="polite"
+          >
             {filteredProducts.map((p) => (
               <ProductCard key={p.id} product={p} publicView whatsapp={catalog.whatsapp} slug={slug} />
             ))}
           </div>
-        )}
-
-        {products.length === 0 && (
-          <p className="py-12 text-center text-gray-500">Este catálogo aún no tiene productos.</p>
         )}
       </main>
     </div>

@@ -5,6 +5,9 @@ import { supabase } from '../lib/supabaseClient.js';
 import { apiClient } from '../lib/apiClient.js';
 import PasswordInput from '../components/PasswordInput.jsx';
 import { getPasswordChecks, passwordValidationRules } from '../lib/passwordRules.js';
+import ActionButton from '../components/ui/ActionButton.jsx';
+import FormField from '../components/ui/FormField.jsx';
+import SectionCard from '../components/ui/SectionCard.jsx';
 
 export default function RegisterPage() {
   const {
@@ -46,107 +49,133 @@ export default function RegisterPage() {
 
   if (success) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-brand-50 px-4">
-        <div className="w-full max-w-md rounded-2xl bg-white p-8 text-center shadow-lg">
+      <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-brand-50 via-white to-brand-100/60 px-4 py-8">
+        <SectionCard className="w-full max-w-md text-center shadow-lg sm:p-8" contentClassName="mt-0">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-50 text-2xl font-bold text-brand-700" aria-hidden="true">
+            ✓
+          </div>
           <h1 className="font-serif text-2xl font-bold text-brand-900">¡Cuenta creada!</h1>
-          <p className="mt-3 text-gray-600">
-  Tu cuenta fue creada correctamente. Te enviamos un correo de bienvenida. Ya puedes
-  iniciar sesión.
-</p>
-          <Link
+          <p className="mt-3 text-sm leading-6 text-gray-600">
+            Tu cuenta fue creada correctamente. Te enviamos un correo de bienvenida. Ya puedes
+            iniciar sesión.
+          </p>
+          <ActionButton
+            as={Link}
             to="/login"
-            className="mt-6 inline-block rounded-lg bg-brand-600 px-5 py-2.5 font-medium text-white hover:bg-brand-900"
+            className="mt-6"
           >
             Ir a iniciar sesión
-          </Link>
-        </div>
-      </div>
+          </ActionButton>
+        </SectionCard>
+      </main>
     );
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-brand-50 px-4">
-      <div className="w-full max-w-md rounded-2xl bg-white p-8 shadow-lg">
-        <h1 className="font-serif text-3xl font-bold text-brand-900">Crear cuenta</h1>
-        <p className="mt-1 text-gray-500">Empieza a publicar tu catálogo</p>
+    <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-brand-50 via-white to-brand-100/60 px-4 py-8">
+      <SectionCard className="w-full max-w-md shadow-lg sm:p-8" contentClassName="mt-0">
+        <div className="text-center">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-600">CataLog</p>
+          <h1 className="mt-2 font-serif text-3xl font-bold text-brand-900">Crear cuenta</h1>
+          <p className="mt-2 text-sm text-gray-600">Empieza a publicar tu catálogo.</p>
+        </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4">
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Nombre completo</label>
+        <form onSubmit={handleSubmit(onSubmit)} className="mt-7 space-y-5">
+          <FormField
+            id="register-name"
+            label="Nombre completo"
+            required
+            error={errors.full_name?.message}
+          >
             <input
+              id="register-name"
+              autoComplete="name"
               {...register('full_name', { required: 'El nombre es requerido' })}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
+              aria-invalid={Boolean(errors.full_name)}
+              className="ui-input"
             />
-            {errors.full_name && (
-              <p className="mt-1 text-sm text-red-600">{errors.full_name.message}</p>
-            )}
-          </div>
+          </FormField>
 
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Email</label>
+          <FormField
+            id="register-email"
+            label="Correo electrónico"
+            required
+            error={errors.email?.message}
+          >
             <input
+              id="register-email"
               type="email"
+              autoComplete="email"
               {...register('email', { required: 'El email es requerido' })}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
+              aria-invalid={Boolean(errors.email)}
+              className="ui-input"
             />
-            {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>}
-          </div>
+          </FormField>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Contraseña</label>
-            <PasswordInput {...register('password', passwordValidationRules)} />
+            <label htmlFor="register-password" className="ui-label">Contraseña <span className="text-red-600" aria-hidden="true">*</span></label>
+            <PasswordInput
+              id="register-password"
+              autoComplete="new-password"
+              aria-invalid={Boolean(errors.password)}
+              {...register('password', passwordValidationRules)}
+            />
             {errors.password && (
-              <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>
+              <p className="ui-error" role="alert">{errors.password.message}</p>
             )}
 
-            <ul className="mt-2 space-y-1">
+            <ul className="mt-3 grid gap-1.5 sm:grid-cols-2" aria-label="Requisitos de contraseña">
               {checks.map((c) => (
                 <li
                   key={c.id}
-                  className={`flex items-center gap-2 text-xs ${
-                    c.ok ? 'text-brand-600' : 'text-gray-400'
+                  className={`flex items-center gap-2 rounded-lg px-2 py-1 text-xs ${
+                    c.ok ? 'bg-brand-50 text-brand-700' : 'bg-gray-50 text-gray-500'
                   }`}
                 >
-                  <span>{c.ok ? '✓' : '○'}</span>
+                  <span aria-hidden="true">{c.ok ? '✓' : '○'}</span>
                   {c.label}
                 </li>
               ))}
             </ul>
           </div>
 
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">
-              Confirmar contraseña
-            </label>
+          <FormField
+            id="register-confirm"
+            label="Confirmar contraseña"
+            required
+            error={errors.confirm?.message}
+          >
             <PasswordInput
+              id="register-confirm"
+              autoComplete="new-password"
+              aria-invalid={Boolean(errors.confirm)}
               {...register('confirm', {
                 required: 'Confirma tu contraseña',
                 validate: (v) => v === password || 'Las contraseñas no coinciden',
               })}
             />
-            {errors.confirm && <p className="mt-1 text-sm text-red-600">{errors.confirm.message}</p>}
-          </div>
+          </FormField>
 
           {serverError && (
-            <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{serverError}</div>
+            <div className="ui-alert-error" role="alert">{serverError}</div>
           )}
 
-          <button
+          <ActionButton
             type="submit"
-            disabled={submitting}
-            className="w-full rounded-lg bg-brand-600 py-2.5 font-medium text-white hover:bg-brand-900 disabled:opacity-60"
+            loading={submitting}
+            fullWidth
           >
-            {submitting ? 'Creando…' : 'Crear cuenta'}
-          </button>
+            Crear cuenta
+          </ActionButton>
         </form>
 
-        <p className="mt-6 text-center text-sm text-gray-500">
+        <p className="mt-6 border-t border-gray-100 pt-5 text-center text-sm text-gray-600">
           ¿Ya tienes cuenta?{' '}
           <Link to="/login" className="font-medium text-brand-600 hover:underline">
             Inicia sesión
           </Link>
         </p>
-      </div>
-    </div>
+      </SectionCard>
+    </main>
   );
 }

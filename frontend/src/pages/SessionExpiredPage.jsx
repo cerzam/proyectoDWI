@@ -1,28 +1,31 @@
 import { useNavigate } from 'react-router-dom';
+import ActionButton from '../components/ui/ActionButton.jsx';
+import SectionCard from '../components/ui/SectionCard.jsx';
 
 export default function SessionExpiredPage() {
   const navigate = useNavigate();
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-brand-50 px-4">
-      <div className="w-full max-w-md rounded-2xl bg-white p-8 text-center shadow-lg">
-        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-red-50 text-red-600">
+    <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-brand-50 via-white to-brand-100/60 px-4 py-8">
+      <SectionCard className="w-full max-w-md text-center shadow-lg sm:p-8" contentClassName="mt-0">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-100 text-2xl font-bold text-amber-800">
           !
         </div>
         <h1 className="mt-5 font-serif text-3xl font-bold text-brand-900">
           Tu sesión ha expirado
         </h1>
-        <p className="mt-3 text-gray-600">
+        <p className="mt-3 text-sm leading-6 text-gray-600">
           Por seguridad, tu sesión fue cerrada automáticamente.
         </p>
-        <button
+        <ActionButton
           type="button"
           onClick={() => navigate('/login')}
-          className="mt-6 w-full rounded-lg bg-brand-600 py-2.5 font-medium text-white hover:bg-brand-900"
+          fullWidth
+          className="mt-6"
         >
           Volver a iniciar sesión
-        </button>
-      </div>
-    </div>
+        </ActionButton>
+      </SectionCard>
+    </main>
   );
 }

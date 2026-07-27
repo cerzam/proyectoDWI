@@ -27,7 +27,7 @@ export default function ProductImageCarousel({ images = [], alt }) {
 
   if (images.length === 0) {
     return (
-      <div className="aspect-[4/3] w-full overflow-hidden rounded-xl bg-gray-50">
+      <div className="aspect-[4/3] w-full overflow-hidden rounded-2xl bg-gray-100 ring-1 ring-gray-200">
         <img src={PLACEHOLDER_IMAGE} alt={alt} className="h-full w-full object-cover" />
       </div>
     );
@@ -35,7 +35,7 @@ export default function ProductImageCarousel({ images = [], alt }) {
 
   if (!hasMultiple) {
     return (
-      <div className="aspect-[4/3] w-full overflow-hidden rounded-xl bg-gray-50">
+      <div className="aspect-[4/3] w-full overflow-hidden rounded-2xl bg-gray-100 shadow-sm ring-1 ring-gray-200">
         <img
           src={images[0]}
           alt={alt}
@@ -50,7 +50,10 @@ export default function ProductImageCarousel({ images = [], alt }) {
 
   return (
     <div className="relative w-full">
-      <div className="aspect-[4/3] w-full overflow-hidden rounded-xl bg-gray-50" ref={emblaRef}>
+      <div
+        className="aspect-[4/3] w-full touch-pan-y overflow-hidden rounded-2xl bg-gray-100 shadow-sm ring-1 ring-gray-200"
+        ref={emblaRef}
+      >
         <div className="flex h-full">
           {images.map((src, index) => (
             <div key={index} className="relative h-full min-w-0 flex-[0_0_100%]">
@@ -71,7 +74,7 @@ export default function ProductImageCarousel({ images = [], alt }) {
         type="button"
         onClick={scrollPrev}
         aria-label="Imagen anterior"
-        className="absolute left-2 top-1/2 -translate-y-1/2 rounded-full bg-white/90 p-2 shadow-sm hover:bg-white"
+        className="absolute left-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 shadow-md ring-1 ring-black/5 transition hover:bg-white"
       >
         <svg className="h-4 w-4 text-gray-700" viewBox="0 0 20 20" fill="none">
           <path d="M12 15l-5-5 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -81,22 +84,22 @@ export default function ProductImageCarousel({ images = [], alt }) {
         type="button"
         onClick={scrollNext}
         aria-label="Siguiente imagen"
-        className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-white/90 p-2 shadow-sm hover:bg-white"
+        className="absolute right-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/95 shadow-md ring-1 ring-black/5 transition hover:bg-white"
       >
         <svg className="h-4 w-4 text-gray-700" viewBox="0 0 20 20" fill="none">
           <path d="M8 15l5-5-5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </button>
 
-      <div className="mt-3 flex justify-center gap-2">
+      <div className="mt-3 flex justify-center gap-2" aria-label={`Imagen ${selectedIndex + 1} de ${images.length}`}>
         {images.map((_, index) => (
           <button
             key={index}
             type="button"
             onClick={() => scrollTo(index)}
             aria-label={`Ir a imagen ${index + 1}`}
-            className={`h-2 w-2 rounded-full transition-colors ${
-              index === selectedIndex ? 'bg-brand-600' : 'bg-gray-300'
+            className={`h-2 rounded-full transition-all ${
+              index === selectedIndex ? 'w-6 bg-brand-600' : 'w-2 bg-gray-300 hover:bg-gray-400'
             }`}
           />
         ))}
