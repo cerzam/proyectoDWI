@@ -30,7 +30,7 @@ const PasswordInput = forwardRef(function PasswordInput({ className = '', ...res
       <input
         ref={ref}
         type={show ? 'text' : 'password'}
-        className={`w-full rounded-lg border border-gray-300 px-3 py-2 pr-10 outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100 ${className}`}
+        className={`ui-input pr-11 ${className}`}
         {...rest}
       />
       <button
@@ -38,7 +38,7 @@ const PasswordInput = forwardRef(function PasswordInput({ className = '', ...res
         onClick={() => setShow((s) => !s)}
         aria-label={show ? 'Ocultar contraseña' : 'Mostrar contraseña'}
         title={show ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-        className="absolute inset-y-0 right-0 flex items-center px-3 text-gray-400 hover:text-brand-600"
+        className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-xl text-gray-500 transition hover:bg-brand-50 hover:text-brand-700"
       >
         <EyeIcon open={show} />
       </button>

@@ -4,10 +4,80 @@
 
 :root {
   font-family: 'DM Sans', system-ui, sans-serif;
+  color-scheme: light;
+}
+
+html {
+  min-width: 320px;
+  background-color: #f7faf8;
 }
 
 body {
   margin: 0;
-  background-color: #f8faf9;
+  min-width: 320px;
+  background-color: #f7faf8;
   color: #0f1f1a;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-400 focus-visible:ring-offset-2;
+}
+
+@layer components {
+  .ui-page {
+    @apply min-h-screen bg-brand-50/40;
+  }
+
+  .ui-container {
+    @apply mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8;
+  }
+
+  .ui-label {
+    @apply mb-1.5 block text-sm font-semibold text-gray-800;
+  }
+
+  .ui-input {
+    @apply h-11 w-full rounded-xl border border-gray-300 bg-white px-3.5 text-base text-gray-900 shadow-sm outline-none transition placeholder:text-gray-400 hover:border-gray-400 focus:border-brand-400 focus:ring-2 focus:ring-brand-100 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-500 sm:text-sm;
+  }
+
+  .ui-textarea {
+    @apply min-h-28 w-full resize-y rounded-xl border border-gray-300 bg-white px-3.5 py-3 text-base text-gray-900 shadow-sm outline-none transition placeholder:text-gray-400 hover:border-gray-400 focus:border-brand-400 focus:ring-2 focus:ring-brand-100 disabled:cursor-not-allowed disabled:bg-gray-100 sm:text-sm;
+  }
+
+  .ui-help {
+    @apply mt-1.5 text-xs leading-5 text-gray-500;
+  }
+
+  .ui-error {
+    @apply mt-1.5 text-sm font-medium text-red-700;
+  }
+
+  .ui-alert-error {
+    @apply rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800;
+  }
+
+  .ui-page-title {
+    @apply font-serif text-2xl font-bold tracking-tight text-brand-900 sm:text-3xl;
+  }
+
+  .ui-section-title {
+    @apply font-serif text-xl font-semibold tracking-tight text-brand-900;
+  }
+
+  .ui-secondary-text {
+    @apply text-sm leading-6 text-gray-600;
+  }
 }
