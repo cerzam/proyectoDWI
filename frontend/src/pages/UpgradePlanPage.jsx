@@ -3,6 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { SALES_WHATSAPP, isSalesWhatsAppValid } from '../config/sales.js';
 import { catalogService } from '../services/catalogService.js';
+import ActionButton from '../components/ui/ActionButton.jsx';
+import SectionCard from '../components/ui/SectionCard.jsx';
+import StatusBadge from '../components/ui/StatusBadge.jsx';
 
 const FREE_PRODUCT_LIMIT = 10;
 
@@ -77,6 +80,10 @@ export default function UpgradePlanPage() {
   const productCount = catalog?.product_count ?? 0;
   const freeLimit = catalog?.product_limit ?? FREE_PRODUCT_LIMIT;
   const hasReachedLimit = !isPro && productCount >= freeLimit;
+  const planUsage = isPro
+    ? 100
+    : Math.min(100, Math.round((productCount / Math.max(freeLimit, 1)) * 100));
+  const availableProducts = Math.max(0, freeLimit - productCount);
 
   const handleWhatsAppRequest = () => {
     if (!catalog || !isSalesWhatsAppValid) return;
@@ -118,7 +125,7 @@ export default function UpgradePlanPage() {
           <button
             type="button"
             onClick={() => navigate('/dashboard')}
-            className="mt-6 rounded-lg bg-brand-600 px-5 py-2.5 font-medium text-white hover:bg-brand-900 focus:outline-none focus:ring-2 focus:ring-brand-400 focus:ring-offset-2"
+            className="mt-6 rounded-xl bg-brand-600 px-5 py-2.5 font-semibold text-white hover:bg-brand-900 focus:outline-none focus:ring-2 focus:ring-brand-400 focus:ring-offset-2"
           >
             Volver al dashboard
           </button>
@@ -128,28 +135,31 @@ export default function UpgradePlanPage() {
   }
 
   return (
-    <div className="min-h-screen bg-brand-50/40">
+    <div className="ui-page">
       <header className="border-b border-gray-200 bg-white">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4">
-          <div>
+        <div className="ui-container flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
             <p className="text-sm font-medium text-brand-600">{catalog.name}</p>
             <p className="text-xs text-gray-500">Planes del catálogo</p>
           </div>
-          <button
+          <ActionButton
             type="button"
             onClick={() => navigate('/dashboard')}
-            className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-brand-400 focus:ring-offset-2"
+            variant="secondary"
+            className="w-full sm:w-auto"
           >
             Volver al dashboard
-          </button>
+          </ActionButton>
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-4 py-10 sm:py-14">
+      <main className="ui-container py-8 sm:py-10">
         <section className="mx-auto max-w-3xl text-center" aria-labelledby="upgrade-title">
-          <p className="text-sm font-semibold uppercase tracking-wider text-brand-600">
-            Plan actual: {isPro ? 'Pro' : 'Free'}
-          </p>
+          <div className="flex justify-center">
+            <StatusBadge tone={isPro ? 'brand' : 'neutral'}>
+              Plan actual: {isPro ? 'Pro' : 'Free'}
+            </StatusBadge>
+          </div>
           <h1
             id="upgrade-title"
             className="mt-3 font-serif text-3xl font-bold text-brand-900 sm:text-4xl"
@@ -163,6 +173,40 @@ export default function UpgradePlanPage() {
               : ' Compara los planes y solicita la activación cuando necesites publicar más productos.'}
           </p>
         </section>
+
+        <SectionCard className="mx-auto mt-7 max-w-3xl" contentClassName="mt-0">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-brand-600">
+                Uso del plan
+              </p>
+              <p className="mt-1 font-serif text-xl font-bold text-brand-900">
+                {isPro ? 'Plan Pro activo' : `${productCount} de ${freeLimit} productos`}
+              </p>
+              <p className="mt-1 text-sm text-gray-600">
+                {isPro
+                  ? `${productCount} productos registrados, sin el límite del plan Free.`
+                  : `${availableProducts} ${availableProducts === 1 ? 'espacio disponible' : 'espacios disponibles'}.`}
+              </p>
+            </div>
+            <StatusBadge tone={isPro ? 'brand' : hasReachedLimit ? 'warning' : 'success'}>
+              {isPro ? 'Pro' : hasReachedLimit ? 'Límite alcanzado' : `${planUsage}% utilizado`}
+            </StatusBadge>
+          </div>
+          <div
+            className="mt-4 h-2.5 overflow-hidden rounded-full bg-brand-100"
+            role="progressbar"
+            aria-label="Uso de productos del plan"
+            aria-valuemin={0}
+            aria-valuemax={isPro ? 100 : freeLimit}
+            aria-valuenow={isPro ? 100 : Math.min(productCount, freeLimit)}
+          >
+            <div
+              className="h-full rounded-full bg-brand-600 transition-[width] duration-300"
+              style={{ width: `${planUsage}%` }}
+            />
+          </div>
+        </SectionCard>
 
         {isPro && (
           <section
@@ -188,8 +232,8 @@ export default function UpgradePlanPage() {
           </section>
         )}
 
-        <section className="mt-10 grid grid-cols-1 gap-6 md:grid-cols-2" aria-label="Comparación de planes">
-          <article className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-200 sm:p-8">
+        <section className="mt-8 grid grid-cols-1 gap-5 md:grid-cols-2" aria-label="Comparación de planes">
+          <article className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm sm:p-8">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-sm font-semibold uppercase tracking-wider text-gray-500">Plan Free</p>
@@ -206,7 +250,7 @@ export default function UpgradePlanPage() {
             </div>
           </article>
 
-          <article className="relative rounded-2xl bg-white p-6 shadow-md ring-2 ring-brand-400 sm:p-8">
+          <article className="relative rounded-2xl border-2 border-brand-400 bg-white p-6 shadow-md sm:p-8">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-sm font-semibold uppercase tracking-wider text-brand-600">Plan Pro</p>
@@ -224,17 +268,18 @@ export default function UpgradePlanPage() {
           </article>
         </section>
 
-        <section className="mx-auto mt-10 max-w-3xl rounded-2xl bg-brand-900 px-6 py-8 text-center text-white sm:px-10">
+        <section className="mx-auto mt-8 max-w-3xl rounded-2xl bg-brand-900 px-6 py-8 text-center text-white sm:px-10">
           {isPro ? (
             <>
               <h2 className="font-serif text-2xl font-semibold">Continúa administrando tu catálogo</h2>
-              <button
+              <ActionButton
                 type="button"
                 onClick={() => navigate('/dashboard')}
-                className="mt-6 rounded-lg bg-white px-6 py-3 font-semibold text-brand-900 hover:bg-brand-50 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-brand-900"
+                variant="secondary"
+                className="mt-6"
               >
                 Volver al dashboard
-              </button>
+              </ActionButton>
             </>
           ) : (
             <>
@@ -244,22 +289,25 @@ export default function UpgradePlanPage() {
                 comercial validará manualmente los datos y la activación de tu cuenta.
               </p>
               <div className="mt-6 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center">
-                <button
+                <ActionButton
                   type="button"
                   onClick={handleWhatsAppRequest}
                   disabled={!isSalesWhatsAppValid}
                   aria-describedby={!isSalesWhatsAppValid ? 'sales-whatsapp-help' : undefined}
-                  className="rounded-lg bg-white px-6 py-3 font-semibold text-brand-900 hover:bg-brand-50 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-brand-900 disabled:cursor-not-allowed disabled:opacity-50"
+                  variant="secondary"
+                  size="lg"
                 >
                   Solicitar por WhatsApp
-                </button>
-                <button
+                </ActionButton>
+                <ActionButton
                   type="button"
                   onClick={() => navigate('/dashboard')}
-                  className="rounded-lg border border-brand-100 px-6 py-3 font-semibold text-white hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-brand-900"
+                  variant="secondary"
+                  size="lg"
+                  className="border-brand-100 bg-transparent text-white hover:bg-white/10"
                 >
                   Volver al dashboard
-                </button>
+                </ActionButton>
               </div>
               {!isSalesWhatsAppValid && (
                 <p id="sales-whatsapp-help" className="mt-4 text-sm text-amber-200" role="status">

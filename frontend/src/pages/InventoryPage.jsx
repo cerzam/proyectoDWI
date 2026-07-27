@@ -3,6 +3,11 @@ import { useForm } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router-dom';
 import { productService } from '../services/productService.js';
 import Toast from '../components/Toast.jsx';
+import ActionButton from '../components/ui/ActionButton.jsx';
+import EmptyState from '../components/ui/EmptyState.jsx';
+import FormField from '../components/ui/FormField.jsx';
+import SectionCard from '../components/ui/SectionCard.jsx';
+import StatusBadge from '../components/ui/StatusBadge.jsx';
 
 const REASONS = [
   { value: 'compra', label: 'Compra' },
@@ -19,6 +24,20 @@ function formatDate(iso) {
     hour: '2-digit',
     minute: '2-digit',
   });
+}
+
+function getReasonLabel(reason) {
+  return REASONS.find((item) => item.value === reason)?.label || reason;
+}
+
+function MovementAmount({ quantity }) {
+  const isEntry = quantity >= 0;
+
+  return (
+    <StatusBadge tone={isEntry ? 'success' : 'danger'}>
+      {isEntry ? 'Entrada' : 'Salida'} · {quantity > 0 ? `+${quantity}` : quantity}
+    </StatusBadge>
+  );
 }
 
 export default function InventoryPage() {
@@ -102,45 +121,68 @@ export default function InventoryPage() {
   }
 
   return (
-    <div className="min-h-screen bg-brand-50/40 px-4 py-8">
+    <div className="ui-page">
       <Toast message={toast?.message} type={toast?.type} onClose={() => setToast(null)} />
-      <div className="mx-auto max-w-3xl">
-        <button onClick={() => navigate('/dashboard')} className="mb-4 text-sm text-brand-600 hover:underline">
+      <div className="mx-auto w-full max-w-4xl px-4 py-5 sm:px-6 sm:py-8">
+        <button
+          type="button"
+          onClick={() => navigate('/dashboard')}
+          className="mb-3 inline-flex min-h-10 items-center rounded-lg text-sm font-semibold text-brand-700 hover:text-brand-900"
+        >
           ← Volver al dashboard
         </button>
 
-        <div className="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-gray-100">
-          <h1 className="font-serif text-2xl font-bold text-brand-900">{product?.name}</h1>
-          <p className="mt-1 text-sm text-gray-500">Stock actual</p>
-          <p className="text-5xl font-extrabold text-brand-600">{product?.stock ?? 0}</p>
-          <p className="mt-4 text-sm text-gray-500">
-            Registra la llegada de nueva mercancía o ventas realizadas manualmente
-          </p>
+        <SectionCard>
+          <div className="flex flex-col gap-4 border-b border-gray-100 pb-6 sm:flex-row sm:items-end sm:justify-between">
+            <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-600">
+                Inventario
+              </p>
+              <h1 className="ui-page-title mt-1 truncate">{product?.name}</h1>
+              <p className="mt-2 text-sm leading-6 text-gray-600">
+                Registra entradas por compras o salidas por ventas y ajustes.
+              </p>
+            </div>
+            <div className="rounded-2xl bg-brand-50 px-5 py-3 sm:min-w-36 sm:text-right">
+              <p className="text-xs font-semibold uppercase tracking-wide text-brand-700">Stock actual</p>
+              <p className="mt-1 text-4xl font-extrabold text-brand-700">{product?.stock ?? 0}</p>
+              <StatusBadge
+                tone={(product?.stock ?? 0) > 0 ? 'success' : 'warning'}
+                className="mt-2"
+              >
+                {(product?.stock ?? 0) > 0 ? 'Con existencias' : 'Sin existencias'}
+              </StatusBadge>
+            </div>
+          </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Cantidad</label>
+          <form onSubmit={handleSubmit(onSubmit)} className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2">
+            <FormField
+              id="inventory-quantity"
+              label="Cantidad"
+              required
+              help="Usa un número positivo para entrada y negativo para salida."
+              error={errors.quantity?.message}
+            >
               <input
+                id="inventory-quantity"
                 type="number"
                 step="1"
-                placeholder="Número positivo para entrada, negativo para salida"
+                placeholder="Ej. 10 o -3"
                 {...register('quantity', {
                   required: 'Requerido',
                   validate: (v) =>
                     (Number.isInteger(Number(v)) && Number(v) !== 0) || 'Entero distinto de 0',
                 })}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
+                aria-invalid={Boolean(errors.quantity)}
+                className="ui-input"
               />
-              {errors.quantity && (
-                <p className="mt-1 text-sm text-red-600">{errors.quantity.message}</p>
-              )}
-            </div>
+            </FormField>
 
-            <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Motivo</label>
+            <FormField id="inventory-reason" label="Motivo" required>
               <select
+                id="inventory-reason"
                 {...register('reason', { required: true })}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
+                className="ui-input"
               >
                 {REASONS.map((r) => (
                   <option key={r.value} value={r.value}>
@@ -148,68 +190,94 @@ export default function InventoryPage() {
                   </option>
                 ))}
               </select>
-            </div>
+            </FormField>
 
-            <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Notas</label>
+            <FormField
+              id="inventory-notes"
+              label="Notas"
+              help="Opcional. Agrega una referencia breve del movimiento."
+              className="sm:col-span-2"
+            >
               <input
+                id="inventory-notes"
                 {...register('notes')}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
+                className="ui-input"
               />
-            </div>
+            </FormField>
 
-            <div className="sm:col-span-3">
+            <div className="sm:col-span-2">
               {formError && (
-                <div className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+                <div className="ui-alert-error mb-3" role="alert">
                   {formError}
                 </div>
               )}
-              <button
+              <ActionButton
                 type="submit"
-                disabled={submitting}
-                className="rounded-lg bg-brand-600 px-6 py-2.5 font-medium text-white hover:bg-brand-900 disabled:opacity-60"
+                loading={submitting}
+                className="w-full sm:w-auto"
               >
-                {submitting ? 'Registrando…' : 'Registrar movimiento'}
-              </button>
+                Registrar movimiento
+              </ActionButton>
             </div>
           </form>
-        </div>
+        </SectionCard>
 
-        <div className="mt-6 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-100">
-          <h2 className="font-serif text-lg font-semibold text-brand-900">Historial</h2>
+        <SectionCard
+          title="Historial"
+          description="Movimientos registrados para este producto."
+          className="mt-5 sm:mt-6"
+        >
           {movements.length === 0 ? (
-            <p className="mt-3 text-sm text-gray-500">Sin movimientos todavía.</p>
+            <EmptyState
+              compact
+              title="Sin movimientos todavía"
+              description="Los cambios de inventario aparecerán aquí cuando registres el primero."
+            />
           ) : (
-            <div className="mt-3 overflow-x-auto">
+            <>
+            <div className="hidden overflow-x-auto sm:block">
               <table className="w-full text-left text-sm">
                 <thead>
-                  <tr className="border-b border-gray-200 text-gray-500">
-                    <th className="py-2 pr-4 font-medium">Fecha</th>
-                    <th className="py-2 pr-4 font-medium">Cantidad</th>
-                    <th className="py-2 pr-4 font-medium">Motivo</th>
-                    <th className="py-2 font-medium">Notas</th>
+                  <tr className="border-b border-gray-200 text-xs uppercase tracking-wide text-gray-500">
+                    <th className="py-3 pr-4 font-semibold">Fecha</th>
+                    <th className="py-3 pr-4 font-semibold">Cantidad</th>
+                    <th className="py-3 pr-4 font-semibold">Motivo</th>
+                    <th className="py-3 font-semibold">Notas</th>
                   </tr>
                 </thead>
                 <tbody>
                   {movements.map((m) => (
                     <tr key={m.id} className="border-b border-gray-100">
-                      <td className="py-2 pr-4 text-gray-600">{formatDate(m.created_at)}</td>
-                      <td
-                        className={`py-2 pr-4 font-semibold ${
-                          m.quantity >= 0 ? 'text-brand-600' : 'text-red-600'
-                        }`}
-                      >
-                        {m.quantity > 0 ? `+${m.quantity}` : m.quantity}
+                      <td className="py-3 pr-4 text-gray-600">{formatDate(m.created_at)}</td>
+                      <td className="py-3 pr-4">
+                        <MovementAmount quantity={m.quantity} />
                       </td>
-                      <td className="py-2 pr-4 capitalize text-gray-700">{m.reason}</td>
-                      <td className="py-2 text-gray-500">{m.notes || '—'}</td>
+                      <td className="py-3 pr-4">
+                        <StatusBadge tone="neutral">{getReasonLabel(m.reason)}</StatusBadge>
+                      </td>
+                      <td className="py-3 text-gray-500">{m.notes || '—'}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
+            <div className="space-y-3 sm:hidden">
+              {movements.map((m) => (
+                <article key={m.id} className="rounded-xl border border-gray-200 bg-gray-50/60 p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <StatusBadge tone="neutral">{getReasonLabel(m.reason)}</StatusBadge>
+                      <p className="mt-1 text-xs text-gray-500">{formatDate(m.created_at)}</p>
+                    </div>
+                    <MovementAmount quantity={m.quantity} />
+                  </div>
+                  {m.notes && <p className="mt-3 border-t border-gray-200 pt-3 text-sm text-gray-600">{m.notes}</p>}
+                </article>
+              ))}
+            </div>
+            </>
           )}
-        </div>
+        </SectionCard>
       </div>
     </div>
   );

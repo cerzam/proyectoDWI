@@ -7,6 +7,9 @@ import { productService } from '../services/productService.js';
 import MultiImageUploader from '../components/MultiImageUploader.jsx';
 import Toast from '../components/Toast.jsx';
 import { getProductImages } from '../utils/productImage.js';
+import ActionButton from '../components/ui/ActionButton.jsx';
+import FormField from '../components/ui/FormField.jsx';
+import SectionCard from '../components/ui/SectionCard.jsx';
 
 const LIMIT_MESSAGE = 'Has alcanzado el límite de 10 productos de tu plan gratuito.';
 const LIMIT_HELP = 'Puedes eliminar un producto existente o solicitar el Plan Pro para registrar más.';
@@ -125,84 +128,108 @@ export default function ProductFormPage() {
   }
 
   return (
-    <div className="min-h-screen bg-brand-50/40 px-4 py-8">
+    <div className="ui-page">
       <Toast message={toast?.message} type={toast?.type} onClose={() => setToast(null)} />
-      <div className="mx-auto max-w-2xl">
-        <button onClick={() => navigate('/dashboard')} className="mb-4 text-sm text-brand-600 hover:underline">
+      <div className="mx-auto w-full max-w-4xl px-4 py-5 sm:px-6 sm:py-8">
+        <button
+          type="button"
+          onClick={() => navigate('/dashboard')}
+          className="mb-3 inline-flex min-h-10 items-center rounded-lg text-sm font-semibold text-brand-700 hover:text-brand-900"
+        >
           ← Volver al dashboard
         </button>
 
-        <div className="rounded-2xl bg-white p-8 shadow-sm ring-1 ring-gray-100">
-          <h1 className="font-serif text-2xl font-bold text-brand-900">
+        <div className="mb-6">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-600">
+            {isEdit ? 'Administrar producto' : 'Agregar al catálogo'}
+          </p>
+          <h1 className="ui-page-title mt-1">
             {isEdit ? 'Editar producto' : 'Nuevo producto'}
           </h1>
+          <p className="mt-2 text-sm leading-6 text-gray-600">
+            Completa la información que verán tus clientes en el catálogo.
+          </p>
+        </div>
 
-          <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-5">
-            <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Nombre *</label>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+          <SectionCard
+            title="Información básica"
+            description="Presenta el producto con un nombre claro y una descripción útil."
+          >
+            <div className="space-y-5">
+              <FormField
+                id="product-name"
+                label="Nombre"
+                required
+                error={errors.name?.message}
+              >
               <input
+                id="product-name"
                 {...register('name', { required: 'El nombre es requerido' })}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
+                aria-invalid={Boolean(errors.name)}
+                className="ui-input"
               />
-              {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>}
-            </div>
+              </FormField>
 
-            <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Descripción</label>
+              <FormField
+                id="product-description"
+                label="Descripción"
+                help="Explica qué hace especial al producto. Puedes incluir materiales, medidas o detalles de uso."
+              >
               <textarea
+                id="product-description"
                 rows={3}
                 {...register('description')}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
+                className="ui-textarea"
               />
+              </FormField>
             </div>
+          </SectionCard>
 
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-              <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">Precio *</label>
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+            <SectionCard
+              title="Precio"
+              description="Define el precio que verá el cliente."
+              className="h-full"
+            >
+                <FormField
+                  id="product-price"
+                  label="Precio"
+                  required
+                  help="Se mostrará en pesos mexicanos."
+                  error={errors.price?.message}
+                >
+                  <div className="relative">
+                    <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-gray-500">
+                      $
+                    </span>
                 <input
+                  id="product-price"
                   type="number"
                   step="0.01"
                   min="0"
-                  placeholder="$0.00"
+                  placeholder="0.00"
                   {...register('price', {
                     required: 'El precio es requerido',
                     min: { value: 0, message: 'Debe ser >= 0' },
                   })}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
+                      aria-invalid={Boolean(errors.price)}
+                      className="ui-input pl-8"
                 />
-                {errors.price && <p className="mt-1 text-sm text-red-600">{errors.price.message}</p>}
-              </div>
+                  </div>
+                </FormField>
+            </SectionCard>
 
-              {!isEdit && (
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">
-                    Piezas disponibles para vender
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    step="1"
-                    defaultValue={0}
-                    {...register('stock_inicial', {
-                      min: { value: 0, message: 'Debe ser >= 0' },
-                    })}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
-                  />
-                  <p className="mt-1 text-xs text-gray-500">
-                    Indica cuántas piezas tienes disponibles para vender
-                  </p>
-                  {errors.stock_inicial && (
-                    <p className="mt-1 text-sm text-red-600">{errors.stock_inicial.message}</p>
-                  )}
-                </div>
-              )}
-            </div>
-
-            <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Categoría</label>
+            <SectionCard
+              title="Categoría"
+              description="Organiza el producto dentro del catálogo."
+              className="h-full"
+            >
+                <FormField id="product-category" label="Categoría" help="Opcional. Ayuda a organizar el catálogo público.">
               <select
+                id="product-category"
                 {...register('category_id')}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-brand-400 focus:ring-2 focus:ring-brand-100"
+                    className="ui-input"
               >
                 <option value="">Sin categoría</option>
                 {categories.map((c) => (
@@ -211,42 +238,75 @@ export default function ProductFormPage() {
                   </option>
                 ))}
               </select>
-            </div>
+                </FormField>
+            </SectionCard>
+          </div>
 
-            <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Imágenes</label>
+          {!isEdit && (
+            <SectionCard
+              title="Inventario inicial"
+              description="Define cuántas piezas estarán disponibles al publicar el producto."
+            >
+              <FormField
+                id="product-stock"
+                label="Piezas disponibles para vender"
+                help="Después podrás registrar entradas y salidas desde el dashboard."
+                error={errors.stock_inicial?.message}
+              >
+                <input
+                  id="product-stock"
+                  type="number"
+                  min="0"
+                  step="1"
+                  defaultValue={0}
+                  {...register('stock_inicial', {
+                    min: { value: 0, message: 'Debe ser >= 0' },
+                  })}
+                  aria-invalid={Boolean(errors.stock_inicial)}
+                  className="ui-input max-w-xs"
+                />
+              </FormField>
+            </SectionCard>
+          )}
+
+          <SectionCard
+            title="Imágenes"
+            description="Agrega hasta cinco imágenes y elige cuál aparecerá primero."
+          >
               <MultiImageUploader catalogId={catalogId} images={images} onChange={setImages} />
-            </div>
+          </SectionCard>
 
             {error && (
-              <div className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</div>
+            <div className="ui-alert-error" role="alert">{error}</div>
             )}
 
             {!isEdit && !canCreateProduct && (
-              <div className="mt-5 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
                 <p className="font-medium">{LIMIT_MESSAGE}</p>
                 <p>{LIMIT_HELP}</p>
               </div>
             )}
 
-            <div className="flex gap-3">
-              <button
+          <div className="sticky bottom-3 z-10 flex flex-col-reverse gap-2 rounded-2xl border border-gray-200 bg-white/95 p-3 shadow-lg backdrop-blur sm:static sm:flex-row sm:justify-end sm:border-0 sm:bg-transparent sm:p-0 sm:shadow-none">
+              <ActionButton
+              type="button"
+              onClick={() => navigate('/dashboard')}
+              variant="secondary"
+              disabled={submitting}
+              className="sm:min-w-28"
+            >
+              Cancelar
+            </ActionButton>
+            <ActionButton
                 type="submit"
                 disabled={submitting || (!isEdit && !canCreateProduct)}
-                className="rounded-lg bg-brand-600 px-6 py-2.5 font-medium text-white hover:bg-brand-900 disabled:cursor-not-allowed disabled:opacity-60"
+              loading={submitting}
+              className="sm:min-w-32"
               >
-                {submitting ? 'Guardando…' : 'Guardar'}
-              </button>
-              <button
-                type="button"
-                onClick={() => navigate('/dashboard')}
-                className="rounded-lg border border-gray-300 px-6 py-2.5 font-medium text-gray-600 hover:bg-gray-50"
-              >
-                Cancelar
-              </button>
-            </div>
+              Guardar producto
+            </ActionButton>
+          </div>
           </form>
-        </div>
       </div>
     </div>
   );

@@ -1,8 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { adminService } from '../services/adminService.js';
 import Toast from '../components/Toast.jsx';
+import ActionButton from '../components/ui/ActionButton.jsx';
+import EmptyState from '../components/ui/EmptyState.jsx';
+import FormField from '../components/ui/FormField.jsx';
+import SectionCard from '../components/ui/SectionCard.jsx';
+import StatusBadge from '../components/ui/StatusBadge.jsx';
 
 const STATUS_LABELS = {
   active: 'Activa',
@@ -10,10 +15,10 @@ const STATUS_LABELS = {
   deleted: 'Eliminada',
 };
 
-const STATUS_STYLES = {
-  active: 'bg-emerald-100 text-emerald-800',
-  suspended: 'bg-amber-100 text-amber-800',
-  deleted: 'bg-red-100 text-red-800',
+const STATUS_TONES = {
+  active: 'success',
+  suspended: 'warning',
+  deleted: 'danger',
 };
 
 export default function AdminPage() {
@@ -24,6 +29,33 @@ export default function AdminPage() {
   const [error, setError] = useState('');
   const [toast, setToast] = useState(null);
   const [dialog, setDialog] = useState(null);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [planFilter, setPlanFilter] = useState('all');
+
+  const summary = useMemo(
+    () => ({
+      total: users.length,
+      active: users.filter((user) => user.status === 'active').length,
+      suspended: users.filter((user) => user.status === 'suspended').length,
+      pro: users.filter((user) => user.plan === 'pro').length,
+    }),
+    [users]
+  );
+
+  const filteredUsers = useMemo(() => {
+    const term = search.trim().toLocaleLowerCase('es-MX');
+    return users.filter((user) => {
+      const matchesTerm =
+        !term ||
+        [user.full_name, user.email, user.id]
+          .filter(Boolean)
+          .some((value) => String(value).toLocaleLowerCase('es-MX').includes(term));
+      const matchesStatus = statusFilter === 'all' || user.status === statusFilter;
+      const matchesPlan = planFilter === 'all' || user.plan === planFilter;
+      return matchesTerm && matchesStatus && matchesPlan;
+    });
+  }, [planFilter, search, statusFilter, users]);
 
   const loadUsers = async () => {
     setLoading(true);
@@ -88,30 +120,87 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-brand-50/40">
+    <div className="ui-page">
       <Toast message={toast?.message} type={toast?.type} onClose={() => setToast(null)} />
       <header className="border-b border-gray-200 bg-white">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-4">
+        <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 px-4 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
           <div>
-            <h1 className="font-serif text-2xl font-bold text-brand-900">Administración</h1>
-            <p className="text-sm text-gray-500">Planes y estado de cuentas</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-purple-700">
+              Panel interno
+            </p>
+            <h1 className="ui-page-title mt-1">Administración</h1>
+            <p className="mt-1 text-sm text-gray-600">Consulta planes y estado de las cuentas.</p>
           </div>
-          <Link
+          <ActionButton
+            as={Link}
             to="/dashboard"
-            className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            variant="secondary"
+            className="w-full sm:w-auto"
           >
             Volver al Dashboard
-          </Link>
+          </ActionButton>
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-4 py-8">
+      <main className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
         {error && (
-          <div role="alert" className="mb-5 rounded-lg bg-red-50 px-4 py-3 text-sm text-red-700">
+          <div role="alert" className="ui-alert-error mb-5">
             {error}
           </div>
         )}
 
+        <section className="grid grid-cols-2 gap-3 lg:grid-cols-4" aria-label="Resumen de usuarios">
+          <SummaryCard label="Total" value={summary.total} tone="neutral" />
+          <SummaryCard label="Activos" value={summary.active} tone="success" />
+          <SummaryCard label="Suspendidos" value={summary.suspended} tone="warning" />
+          <SummaryCard label="Plan Pro" value={summary.pro} tone="brand" />
+        </section>
+
+        <SectionCard
+          title="Usuarios"
+          description={`${filteredUsers.length} de ${users.length} cuentas`}
+          className="mt-5 sm:mt-6"
+        >
+          <div className="grid grid-cols-1 gap-3 border-b border-gray-100 pb-5 sm:grid-cols-[minmax(0,1fr)_12rem_10rem]">
+            <FormField id="admin-search" label="Buscar">
+              <input
+                id="admin-search"
+                type="search"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Nombre o correo"
+                className="ui-input"
+              />
+            </FormField>
+            <FormField id="admin-status-filter" label="Estado">
+              <select
+                id="admin-status-filter"
+                value={statusFilter}
+                onChange={(event) => setStatusFilter(event.target.value)}
+                className="ui-input"
+              >
+                <option value="all">Todos</option>
+                <option value="active">Activos</option>
+                <option value="suspended">Suspendidos</option>
+                <option value="deleted">Eliminados</option>
+              </select>
+            </FormField>
+            <FormField id="admin-plan-filter" label="Plan">
+              <select
+                id="admin-plan-filter"
+                value={planFilter}
+                onChange={(event) => setPlanFilter(event.target.value)}
+                className="ui-input"
+              >
+                <option value="all">Todos</option>
+                <option value="free">Free</option>
+                <option value="pro">Pro</option>
+              </select>
+            </FormField>
+          </div>
+
+        {filteredUsers.length > 0 ? (
+          <>
         <div className="hidden overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-gray-200 md:block">
           <table className="w-full text-left text-sm">
             <thead className="bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
@@ -124,7 +213,7 @@ export default function AdminPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {users.map((user) => (
+              {filteredUsers.map((user) => (
                 <UserRow
                   key={user.id}
                   user={user}
@@ -141,7 +230,7 @@ export default function AdminPage() {
         </div>
 
         <div className="grid gap-4 md:hidden">
-          {users.map((user) => (
+          {filteredUsers.map((user) => (
             <UserCard
               key={user.id}
               user={user}
@@ -154,12 +243,35 @@ export default function AdminPage() {
             />
           ))}
         </div>
-
-        {users.length === 0 && (
-          <div className="rounded-xl bg-white p-10 text-center text-gray-500">
-            No hay usuarios registrados.
-          </div>
+          </>
+        ) : (
+          <EmptyState
+            compact
+            className="mt-5"
+            title={users.length === 0 ? 'No hay usuarios registrados' : 'No encontramos resultados'}
+            description={
+              users.length === 0
+                ? 'Las cuentas aparecerán aquí cuando se registren.'
+                : 'Ajusta la búsqueda o los filtros para ver otras cuentas.'
+            }
+            action={
+              users.length > 0 ? (
+                <ActionButton
+                  type="button"
+                  variant="secondary"
+                  onClick={() => {
+                    setSearch('');
+                    setStatusFilter('all');
+                    setPlanFilter('all');
+                  }}
+                >
+                  Limpiar filtros
+                </ActionButton>
+              ) : null
+            }
+          />
         )}
+        </SectionCard>
       </main>
 
       {dialog && (
@@ -193,14 +305,41 @@ export default function AdminPage() {
   );
 }
 
-function UserIdentity({ user }) {
+function SummaryCard({ label, value, tone }) {
+  const toneClasses = {
+    neutral: 'bg-gray-50 text-gray-700',
+    success: 'bg-emerald-50 text-emerald-800',
+    warning: 'bg-amber-50 text-amber-900',
+    brand: 'bg-brand-50 text-brand-900',
+  };
+
   return (
-    <div>
-      <p className="font-medium text-gray-900">{user.full_name || 'Sin nombre'}</p>
-      <p className="break-all text-xs text-gray-500">{user.email || user.id}</p>
-      {user.suspension_reason && (
-        <p className="mt-1 text-xs text-amber-700">Motivo: {user.suspension_reason}</p>
-      )}
+    <article className={`rounded-2xl border border-gray-200 p-4 shadow-sm sm:p-5 ${toneClasses[tone]}`}>
+      <p className="text-xs font-semibold uppercase tracking-wide opacity-75">{label}</p>
+      <p className="mt-1 text-3xl font-bold">{value}</p>
+    </article>
+  );
+}
+
+function UserIdentity({ user }) {
+  const displayName = user.full_name || user.email || 'Usuario';
+  const initial = displayName.trim().charAt(0).toUpperCase() || 'U';
+
+  return (
+    <div className="flex min-w-0 items-start gap-3">
+      <span
+        aria-hidden="true"
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-100 font-serif font-bold text-brand-900"
+      >
+        {initial}
+      </span>
+      <div className="min-w-0">
+        <p className="truncate font-medium text-gray-900">{user.full_name || 'Sin nombre'}</p>
+        <p className="break-all text-xs text-gray-500">{user.email || user.id}</p>
+        {user.suspension_reason && (
+          <p className="mt-1 text-xs text-amber-700">Motivo: {user.suspension_reason}</p>
+        )}
+      </div>
     </div>
   );
 }
@@ -220,34 +359,38 @@ function UserControls({
   return (
     <div className="flex flex-wrap justify-end gap-2">
       {user.status === 'active' ? (
-        <button
+        <ActionButton
           type="button"
           disabled={busy || isSelf}
           onClick={onSuspend}
           title={isSelf ? 'No puedes suspender tu propia cuenta' : undefined}
-          className="rounded-lg border border-amber-300 px-3 py-1.5 text-xs font-medium text-amber-800 hover:bg-amber-50 disabled:cursor-not-allowed disabled:opacity-40"
+          variant="warning"
+          size="sm"
         >
           Suspender
-        </button>
+        </ActionButton>
       ) : user.status === 'suspended' ? (
-        <button
+        <ActionButton
           type="button"
           disabled={busy}
           onClick={() => onReactivate(user)}
-          className="rounded-lg border border-emerald-300 px-3 py-1.5 text-xs font-medium text-emerald-800 hover:bg-emerald-50 disabled:opacity-40"
+          variant="secondary"
+          size="sm"
+          className="border-emerald-300 text-emerald-800 hover:bg-emerald-50"
         >
           Reactivar
-        </button>
+        </ActionButton>
       ) : null}
-      <button
+      <ActionButton
         type="button"
         disabled={busy || isSelf || isDeleted}
         onClick={onDelete}
         title={isSelf ? 'No puedes eliminar tu propia cuenta' : undefined}
-        className="rounded-lg border border-red-300 px-3 py-1.5 text-xs font-medium text-red-700 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
+        variant="danger"
+        size="sm"
       >
         Eliminar
-      </button>
+      </ActionButton>
     </div>
   );
 }
@@ -259,7 +402,7 @@ function PlanSelect({ user, busy, onPlan }) {
       disabled={busy || user.status === 'deleted'}
       onChange={(event) => onPlan(user, event.target.value)}
       aria-label={`Plan de ${user.email || user.id}`}
-      className="rounded-lg border border-gray-300 bg-white px-2 py-1.5 text-sm disabled:opacity-50"
+      className="h-10 rounded-xl border border-gray-300 bg-white px-3 text-sm font-medium shadow-sm outline-none disabled:opacity-50"
     >
       <option value="free">Free</option>
       <option value="pro">Pro</option>
@@ -274,9 +417,9 @@ function UserRow(props) {
       <td className="px-5 py-4"><UserIdentity user={user} /></td>
       <td className="px-5 py-4 capitalize">{user.role}</td>
       <td className="px-5 py-4">
-        <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${STATUS_STYLES[user.status]}`}>
+        <StatusBadge tone={STATUS_TONES[user.status]}>
           {STATUS_LABELS[user.status]}
-        </span>
+        </StatusBadge>
       </td>
       <td className="px-5 py-4"><PlanSelect user={user} busy={busy} onPlan={onPlan} /></td>
       <td className="px-5 py-4"><UserControls {...props} /></td>
@@ -290,9 +433,9 @@ function UserCard(props) {
     <article className={`rounded-xl bg-white p-5 shadow-sm ring-1 ring-gray-200 ${busy ? 'opacity-60' : ''}`}>
       <div className="flex items-start justify-between gap-3">
         <UserIdentity user={user} />
-        <span className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${STATUS_STYLES[user.status]}`}>
+        <StatusBadge tone={STATUS_TONES[user.status]} className="shrink-0">
           {STATUS_LABELS[user.status]}
-        </span>
+        </StatusBadge>
       </div>
       <div className="mt-4 flex items-center justify-between border-t border-gray-100 pt-4">
         <span className="text-sm capitalize text-gray-600">{user.role}</span>
@@ -317,7 +460,7 @@ function ConfirmationDialog({ dialog, busy, onChange, onCancel, onConfirm }) {
       aria-labelledby="admin-dialog-title"
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
     >
-      <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+      <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl" tabIndex="-1">
         <h2 id="admin-dialog-title" className="font-serif text-2xl font-bold text-brand-900">
           {deleting ? 'Eliminar cuenta' : 'Suspender cuenta'}
         </h2>
@@ -328,49 +471,50 @@ function ConfirmationDialog({ dialog, busy, onChange, onCancel, onConfirm }) {
         </p>
 
         {deleting ? (
-          <div className="mt-5">
-            <label className="block text-sm font-medium text-gray-700">
-              Escribe <strong>{expectedEmail || 'ELIMINAR'}</strong> o <strong>ELIMINAR</strong>
-            </label>
+          <FormField
+            id="admin-delete-confirmation"
+            label={<>Escribe <strong>{expectedEmail || 'ELIMINAR'}</strong> o <strong>ELIMINAR</strong></>}
+            className="mt-5"
+          >
             <input
+              id="admin-delete-confirmation"
               autoFocus
               value={dialog.value}
               onChange={(event) => onChange(event.target.value)}
-              className="mt-2 w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-red-400 focus:ring-2 focus:ring-red-100"
+              className="ui-input focus:border-red-400 focus:ring-red-100"
             />
-          </div>
+          </FormField>
         ) : (
-          <div className="mt-5">
-            <label className="block text-sm font-medium text-gray-700">Motivo</label>
+          <FormField id="admin-suspension-reason" label="Motivo" className="mt-5">
             <textarea
+              id="admin-suspension-reason"
               autoFocus
               maxLength={500}
               value={dialog.value}
               onChange={(event) => onChange(event.target.value)}
-              className="mt-2 min-h-28 w-full rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
+              className="ui-textarea focus:border-amber-400 focus:ring-amber-100"
             />
-          </div>
+          </FormField>
         )}
 
-        <div className="mt-6 flex justify-end gap-3">
-          <button
+        <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <ActionButton
             type="button"
             disabled={busy}
             onClick={onCancel}
-            className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700"
+            variant="secondary"
           >
             Cancelar
-          </button>
-          <button
+          </ActionButton>
+          <ActionButton
             type="button"
             disabled={busy || !confirmationValid}
+            loading={busy}
             onClick={onConfirm}
-            className={`rounded-lg px-4 py-2 text-sm font-medium text-white disabled:opacity-40 ${
-              deleting ? 'bg-red-600 hover:bg-red-700' : 'bg-amber-600 hover:bg-amber-700'
-            }`}
+            variant={deleting ? 'solidDanger' : 'solidWarning'}
           >
-            {busy ? 'Procesando…' : deleting ? 'Eliminar lógicamente' : 'Suspender'}
-          </button>
+            {deleting ? 'Eliminar lógicamente' : 'Suspender'}
+          </ActionButton>
         </div>
       </div>
     </div>
